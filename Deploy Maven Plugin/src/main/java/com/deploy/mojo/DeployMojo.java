@@ -320,7 +320,7 @@ public class DeployMojo extends AbstractMojo {
 			e.printStackTrace();
 			throw new MojoExecutionException("执行maven命令，编译打包项目代码失败！");
 		}
-		if (!StringUtil.isBlank(result.get("InputInfo")) && result.get("InputInfo").contains("SUCCESS")) {
+		if (StringUtil.isBlank(result.get("InputInfo")) || !result.get("InputInfo").contains("SUCCESS")) {
 			throw new MojoExecutionException("执行maven命令，编译打包项目代码失败！");
 		}
 		getLog().info("执行maven命令，编译打包项目代码成功！");
