@@ -1,6 +1,7 @@
 package com.deploy.mojo;
 
 import java.io.File;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -267,6 +268,15 @@ public class DeployMojo extends AbstractMojo {
 			throw new MojoExecutionException("获取" + branch + "分支最新CommitID或pom文件中项目版本号失败！");
 		}
 		getLog().info(branch + "分支最新CommitID:" + newCommitID + ",pom文件中项目版本号:" + newProjectVersion);
+		try {
+			deployMain.setBranch(branch);
+			deployMain.setGitCommitId(newCommitID);
+			deployMain.setProjectVersion(newProjectVersion);
+			SqliteUtil.updateDeployMain(deployMain);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new MojoExecutionException("更新部署主表信息失败！");
+		}
 		Map<String, String> diffInfo = null;
 		if (isIncrementalDeployment) {
 			getLog().info("正在执行对比版本差异操作...");
@@ -342,8 +352,10 @@ public class DeployMojo extends AbstractMojo {
 		getLog().info("执行备份目录下创建相关目录并解压war包操作成功！");
 		if (isIncrementalDeployment) {
 			// 对应关系
-			// DasHealthCare\javahis5\WebContent -->  apache-tomcat-8.5.24\webapps\javahis5
-			// DasHealthCare\javahis5\src --> apache-tomcat-8.5.24\webapps\javahis5\WEB-INF\classes
+			// DasHealthCare\javahis5\WebContent -->
+			// apache-tomcat-8.5.24\webapps\javahis5
+			// DasHealthCare\javahis5\src -->
+			// apache-tomcat-8.5.24\webapps\javahis5\WEB-INF\classes
 			getLog().info("开始执行增量部署...");
 			try {
 				if (diffInfo.size() > 0) {
@@ -405,7 +417,7 @@ public class DeployMojo extends AbstractMojo {
 					getLog().info("版本无差异！");
 				}
 				getLog().info("正在更新tomcat项目版本信息...");
-				FileUtil.newFile(tomcatProjectDir.getPath() + "/" + "version.txt",deployMain.getDeployId() + ":" + branch + ":" + newCommitID + ":" + newProjectVersion);
+				FileUtil.newFile(tomcatProjectDir.getPath() + "/" + "version.txt", deployMain.getDeployId() + ":" + branch + ":" + newCommitID + ":" + newProjectVersion);
 				getLog().info("正在保存tomcat项目中文件版本信息...");
 				VersionUtil.saveTomcatFileVersionInfo(deployMain.getDeployId(), tomcatProjectDir);
 			} catch (Exception e) {
@@ -421,7 +433,7 @@ public class DeployMojo extends AbstractMojo {
 				tomcatProjectDir.mkdirs();
 				FileUtil.copyDirContentToDir(tempDir, tomcatProjectDir);// 执行部署
 				getLog().info("正在更新tomcat项目版本信息...");
-				FileUtil.newFile(tomcatProjectDir.getPath() + "/" + "version.txt",deployMain.getDeployId() + ":" + branch + ":" + newCommitID + ":" + newProjectVersion);
+				FileUtil.newFile(tomcatProjectDir.getPath() + "/" + "version.txt", deployMain.getDeployId() + ":" + branch + ":" + newCommitID + ":" + newProjectVersion);
 				getLog().info("正在保存tomcat项目中文件版本信息...");
 				VersionUtil.saveTomcatFileVersionInfo(deployMain.getDeployId(), tomcatProjectDir);
 			} catch (Exception e) {
@@ -447,6 +459,14 @@ public class DeployMojo extends AbstractMojo {
 				throw new MojoExecutionException("执行数据修正操作失败！");
 			}
 			getLog().info("执行数据修正操作完成！");
+		}
+		try {
+			deployMain.setDeployEndTime(SqliteUtil.sdf.format(new Date()));
+			deployMain.setIsSuccess("成功！");
+			SqliteUtil.updateDeployMain(deployMain);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new MojoExecutionException("更新部署主表信息失败！");
 		}
 		try {
 			getLog().info("正在启动Tomcat...");

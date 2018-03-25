@@ -34,7 +34,7 @@ import com.deploy.mojo.DeployMojo;
  *
  */
 public class SqliteUtil {
-	private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	public  static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static SqlSessionFactory ssf = null;
 
 	/**
@@ -256,6 +256,20 @@ public class SqliteUtil {
 		SqlSession sqlSession = getSqlSessionFactory().openSession();
 		FileVersionInfoMapper fvim = sqlSession.getMapper(FileVersionInfoMapper.class);
 		fvim.deleteAll();
+		sqlSession.commit();
+		sqlSession.close();
+	}
+
+	/**
+	 * 更新部署主表信息
+	 * 
+	 * @param deployMain
+	 * @throws IOException
+	 */
+	public static void updateDeployMain(DeployMain deployMain) throws IOException {
+		SqlSession sqlSession = getSqlSessionFactory().openSession();
+		DeployMainMapper dmm = sqlSession.getMapper(DeployMainMapper.class);
+		dmm.updateByPrimaryKey(deployMain);
 		sqlSession.commit();
 		sqlSession.close();
 	}
