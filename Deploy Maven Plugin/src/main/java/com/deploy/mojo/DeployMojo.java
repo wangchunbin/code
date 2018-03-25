@@ -27,8 +27,8 @@ import com.deploy.util.VersionUtil;
  * @author WangChunBin
  *
  */
-@Mojo(name = "hisDeploy")
-public class HisDeployMojo extends AbstractMojo {
+@Mojo(name = "deploy")
+public class DeployMojo extends AbstractMojo {
 	/**
 	 * 远程仓库URL地址
 	 */
@@ -434,7 +434,7 @@ public class HisDeployMojo extends AbstractMojo {
 				&& !StringUtil.isBlank(url) && !StringUtil.isBlank(username) && !StringUtil.isBlank(password)) {
 			getLog().info("正在执行数据修正操作...");
 			try {
-				HisDBInitMojo mojo = new HisDBInitMojo();
+				DBInitMojo mojo = new DBInitMojo();
 				mojo.setDataDir(dataCorrectionDir);
 				mojo.setSeparator(separator);
 				mojo.setDriverClassName(driverClassName);
@@ -464,7 +464,7 @@ public class HisDeployMojo extends AbstractMojo {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		HisDeployMojo deploy = new HisDeployMojo();
+		DeployMojo deploy = new DeployMojo();
 		deploy.setGitRemoteAddress(" http://192.168.123.199:10080/root/DASHISCODE.git");
 		deploy.setLocalGitPath("C:/Users/wangchunbin/Desktop/test");
 		deploy.setProjectAtGitRepositoryPath("DasHealthCare\\javahis5");

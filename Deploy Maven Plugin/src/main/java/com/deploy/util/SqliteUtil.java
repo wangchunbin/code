@@ -7,12 +7,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
-
 import com.deploy.dao.CommonMapper;
 import com.deploy.dao.CommonParam;
 import com.deploy.dao.DeployConfig;
@@ -27,7 +25,7 @@ import com.deploy.dao.FileVersionModifyBak;
 import com.deploy.dao.FileVersionModifyBakMapper;
 import com.deploy.dao.GitDiffInfo;
 import com.deploy.dao.GitDiffInfoMapper;
-import com.deploy.mojo.HisDeployMojo;
+import com.deploy.mojo.DeployMojo;
 
 /**
  * sqlite数据库操作工具类
@@ -47,7 +45,7 @@ public class SqliteUtil {
 	 */
 	public static synchronized SqlSessionFactory getSqlSessionFactory() throws IOException {
 		if (ssf == null) {
-			String resource = "com/das/his/dao/MybatisConfig.xml";
+			String resource = "com/deploy/dao/MybatisConfig.xml";
 			InputStream inputStream = Resources.getResourceAsStream(resource);
 			ssf = new SqlSessionFactoryBuilder().build(inputStream);
 			return ssf;
@@ -144,26 +142,26 @@ public class SqliteUtil {
 	 * @param hdm
 	 * @throws IOException
 	 */
-	public static void saveDeployConfig(Integer deployId, HisDeployMojo hdm) throws IOException {
+	public static void saveDeployConfig(Integer deployId, DeployMojo dm) throws IOException {
 		SqlSession sqlSession = getSqlSessionFactory().openSession();
 		DeployConfigMapper dcm = sqlSession.getMapper(DeployConfigMapper.class);
 		DeployConfig dc = new DeployConfig();
-		dc.setBackupDir(hdm.getBackupDir().getPath());
-		dc.setBranch(hdm.getBranch());
-		dc.setDataCorrectionDir(hdm.getDataCorrectionDir() == null ? null : hdm.getDataCorrectionDir().getPath());
+		dc.setBackupDir(dm.getBackupDir().getPath());
+		dc.setBranch(dm.getBranch());
+		dc.setDataCorrectionDir(dm.getDataCorrectionDir() == null ? null : dm.getDataCorrectionDir().getPath());
 		dc.setDeployId(deployId);
-		dc.setDriverClassName(hdm.getDriverClassName());
-		dc.setGitRemoteAddress(hdm.getGitRemoteAddress());
-		dc.setGitRemoteEmail(hdm.getGitRemoteEmail());
-		dc.setGitRemotePassword(hdm.getGitRemotePassWord());
-		dc.setGitRemoteUsername(hdm.getGitRemoteUserName());
-		dc.setLocalGitPath(hdm.getLocalGitPath());
-		dc.setPassword(hdm.getPassword());
-		dc.setProjectAtGitRepositoryPath(hdm.getProjectAtGitRepositoryPath());
-		dc.setSeparator(hdm.getSeparator());
-		dc.setTomcatProjectDir(hdm.getTomcatProjectDir().getPath());
-		dc.setUrl(hdm.getUrl());
-		dc.setUsername(hdm.getUsername());
+		dc.setDriverClassName(dm.getDriverClassName());
+		dc.setGitRemoteAddress(dm.getGitRemoteAddress());
+		dc.setGitRemoteEmail(dm.getGitRemoteEmail());
+		dc.setGitRemotePassword(dm.getGitRemotePassWord());
+		dc.setGitRemoteUsername(dm.getGitRemoteUserName());
+		dc.setLocalGitPath(dm.getLocalGitPath());
+		dc.setPassword(dm.getPassword());
+		dc.setProjectAtGitRepositoryPath(dm.getProjectAtGitRepositoryPath());
+		dc.setSeparator(dm.getSeparator());
+		dc.setTomcatProjectDir(dm.getTomcatProjectDir().getPath());
+		dc.setUrl(dm.getUrl());
+		dc.setUsername(dm.getUsername());
 		dcm.insert(dc);
 		sqlSession.commit();
 		sqlSession.close();
@@ -261,5 +259,4 @@ public class SqliteUtil {
 		sqlSession.commit();
 		sqlSession.close();
 	}
-
 }

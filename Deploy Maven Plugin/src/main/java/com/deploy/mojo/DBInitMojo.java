@@ -29,8 +29,8 @@ import com.deploy.util.ExcelUtil;
  * @author WangChunBin
  *
  */
-@Mojo(name = "hisDBInit")
-public class HisDBInitMojo extends AbstractMojo {
+@Mojo(name = "dbInit")
+public class DBInitMojo extends AbstractMojo {
 	/**
 	 * 数据库驱动类
 	 */
@@ -238,7 +238,7 @@ public class HisDBInitMojo extends AbstractMojo {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) throws Exception {
-		HisDBInitMojo mojo = new HisDBInitMojo();
+		DBInitMojo mojo = new DBInitMojo();
 		mojo.setDataDir(new File("C:\\Users\\das_w\\Desktop\\HisMavenPlugin\\TXDB"));
 		mojo.setDriverClassName("oracle.jdbc.driver.OracleDriver");
 		mojo.setUrl("jdbc:oracle:thin:@192.168.100.143:1521:DASTEST");
