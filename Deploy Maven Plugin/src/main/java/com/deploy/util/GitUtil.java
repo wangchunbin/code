@@ -42,8 +42,7 @@ public class GitUtil {
 		}
 		CmdUtil.execCMD(localGitPath, "git config --global user.name \"" + userName + "\"");
 		CmdUtil.execCMD(localGitPath, "git config --global user.email \"" + email + "\"");
-		Map<String, String> cloneInfo = CmdUtil.execCMD(localGitPath, "git clone -b " + branch + " " + remoteAddress + " " + localGitPath);
-		System.out.println("cloneInfo:\r\n" + cloneInfo);
+		CmdUtil.execCMD(localGitPath, "git clone -b " + branch + " " + remoteAddress + " " + localGitPath);
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
 		Repository repository = builder.setGitDir(new File(localGitPath + "/.git")).readEnvironment().findGitDir()
 				.build();
