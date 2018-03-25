@@ -345,6 +345,7 @@ public class DeployMojo extends AbstractMojo {
 			List<File> wars = FileUtil.findFile(new File(sourceDir.getPath() + "/target"), ".*\\.war$");// 查找打包后的war包
 			FileUtil.copyFileToDir(wars.get(0), tempDir);
 			CmdUtil.execCMD(tempDir.getPath(), "jar xvf " + wars.get(0).getName());
+			FileUtil.deleteDirOrFile(wars.get(0).getPath());
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new MojoExecutionException("执行备份目录下创建相关目录并解压war包操作失败！");
