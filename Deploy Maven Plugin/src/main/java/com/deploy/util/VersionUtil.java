@@ -67,7 +67,8 @@ public class VersionUtil {
 	 * @param diffInfo
 	 * @throws Exception
 	 */
-	public static void incrementalWriteVersion(File sourceDir, String projectName, Map<String, String> diffInfo) throws Exception {
+	public static void incrementalWriteVersion(File sourceDir, String projectName, Map<String, String> diffInfo)
+			throws Exception {
 		if (sourceDir != null && sourceDir.exists() && sourceDir.isDirectory()) {
 			File[] files = sourceDir.listFiles();
 			if (files != null && files.length > 0) {
@@ -76,14 +77,16 @@ public class VersionUtil {
 					if (fileVersionInfoList != null && fileVersionInfoList.size() > 0) {
 						ClassAndXfileVersionInfoMap = new HashMap<String, FileVersionInfo>();
 						for (FileVersionInfo fvi : fileVersionInfoList) {
-							if (fvi.getFile().contains(".x")) {
+							if (fvi.getFile().endsWith(".x")) {
 								String path = fvi.getFile();
-								String shortName = path.substring(path.indexOf(projectName) + projectName.length() + 1, path.lastIndexOf("."));
+								String shortName = path.substring(path.indexOf(projectName) + projectName.length() + 1,
+										path.lastIndexOf("."));
 								ClassAndXfileVersionInfoMap.put(shortName, fvi);// 放入HashMap方便查找
 							}
-							if (fvi.getFile().contains(".class")) {
+							if (fvi.getFile().endsWith(".class")) {
 								String path = fvi.getFile();
-								String shortName = path.substring(path.indexOf("classes") + "classes".length() + 1, path.lastIndexOf("."));
+								String shortName = path.substring(path.indexOf("classes") + "classes".length() + 1,
+										path.lastIndexOf("."));
 								ClassAndXfileVersionInfoMap.put(shortName, fvi);// 放入HashMap方便查找
 							}
 						}
@@ -92,15 +95,17 @@ public class VersionUtil {
 				for (File file : files) {
 					if (file.isFile()) {
 						String shortName = null;
-						if (file.getName().contains(".x")) {
+						if (file.getName().endsWith(".x")) {
 							String path = file.getPath();
 							if (path.contains("WebContent")) {
-								shortName = path.substring(path.indexOf("WebContent") + "WebContent".length() + 1, path.lastIndexOf("."));
+								shortName = path.substring(path.indexOf("WebContent") + "WebContent".length() + 1,
+										path.lastIndexOf("."));
 							}
-						} else if (file.getName().contains(".java")) {
+						} else if (file.getName().endsWith(".java")) {
 							String path = file.getPath();
 							if (path.contains("src")) {
-								shortName = path.substring(path.indexOf("src") + "src".length() + 1, path.lastIndexOf("."));
+								shortName = path.substring(path.indexOf("src") + "src".length() + 1,
+										path.lastIndexOf("."));
 							}
 						} else {
 							continue;
@@ -145,17 +150,67 @@ public class VersionUtil {
 	 */
 	public static void batchWriteInitVersion(File sourceDir) throws Exception {
 		if (sourceDir != null && sourceDir.exists() && sourceDir.isDirectory()) {
-			File[] files = sourceDir.listFiles();
-			if (files != null && files.length > 0) {
-				for (File file : files) {
-					if (file.isFile()) {
-						if (file.getName().contains(".x") || file.getName().contains(".java")) {
-							writeVersion(file, 1, "初始版本！");
-						}
-					} else {
-						batchWriteInitVersion(file);
+			List<File> tempFileList = new ArrayList<File>();
+			FileUtil.listFiles(sourceDir, tempFileList);
+			List<File> fileList = new ArrayList<File>();
+			if (tempFileList != null && tempFileList.size() > 0) {
+				for (File file : tempFileList) {
+					if (file.getName().endsWith(".x") || file.getName().endsWith(".java")) {
+						fileList.add(file);
 					}
 				}
+			}
+			if (fileList != null && fileList.size() > 0) {
+				int threadCount = 4;
+				int size = fileList.size();
+				threadCount = Math.min(threadCount, size);
+				int fileCount = size / threadCount;
+				int addCount = size % threadCount;
+				CountDownLatch cdl = new CountDownLatch(threadCount);
+				int cursor = 0;
+				for (int i = 0; i < threadCount; i++) {
+					List<File> subList = null;
+					if (i == 0) {
+						cursor = fileCount + addCount;
+						subList = fileList.subList(0, cursor);
+					} else {
+						subList = fileList.subList(cursor, cursor += fileCount);
+					}
+					new WriteInitVersionThread(subList, cdl).start();
+				}
+				cdl.await();
+			}
+		}
+	}
+
+	/**
+	 * 写入初始版本信息线程体
+	 * 
+	 * @author WangChunBin
+	 *
+	 */
+	public static class WriteInitVersionThread extends Thread {
+		private List<File> fileList;
+
+		private CountDownLatch countDownLatch;
+
+		public WriteInitVersionThread(List<File> fileList, CountDownLatch countDownLatch) {
+			this.fileList = fileList;
+			this.countDownLatch = countDownLatch;
+		}
+
+		@Override
+		public void run() {
+			try {
+				if (fileList != null && fileList.size() > 0) {
+					for (File file : fileList) {
+						writeVersion(file, 1, "初始版本！");
+					}
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			} finally {
+				countDownLatch.countDown();
 			}
 		}
 	}
@@ -241,11 +296,14 @@ public class VersionUtil {
 	 * @return
 	 */
 	public static Map<String, Object> getVersionInfo(File tomcatProjectfile) throws Exception {
-		if (tomcatProjectfile != null && tomcatProjectfile.exists() && (tomcatProjectfile.getName().contains(".class") || tomcatProjectfile.getName().contains(".x"))) {
+		if (tomcatProjectfile != null && tomcatProjectfile.exists()
+				&& (tomcatProjectfile.getName().endsWith(".class") || tomcatProjectfile.getName().endsWith(".x"))) {
 			Map<String, Object> versionInfo = new HashMap<String, Object>();
 			if (tomcatProjectfile.getName().contains(".class")) {
 				String path = tomcatProjectfile.getPath();
-				String className = path.substring(path.indexOf("classes\\") + "classes\\".length(), path.lastIndexOf(".")).replace("\\", ".");
+				String className = path
+						.substring(path.indexOf("classes\\") + "classes\\".length(), path.lastIndexOf("."))
+						.replace("\\", ".");
 				if (classLoadUrls == null) {
 					String classPath = path.substring(0, path.indexOf("classes") + "classes".length());
 					String libPath = path.substring(0, path.indexOf("WEB-INF") + "WEB-INF".length()) + "\\lib";
@@ -273,7 +331,7 @@ public class VersionUtil {
 						versionInfo.put("information", version.information());
 					}
 				}
-			} else if (tomcatProjectfile.getName().contains(".x")) {
+			} else if (tomcatProjectfile.getName().endsWith(".x")) {
 				FileInputStream fis = new FileInputStream(tomcatProjectfile);
 				BufferedReader br = new BufferedReader(new InputStreamReader(fis, "GBK"));
 				String line = null;
@@ -329,25 +387,31 @@ public class VersionUtil {
 						Integer i2 = file.getVersionNumber();
 						if (i1 != null) {
 							if (!i1.equals(i2)) {
-								sb.append("文件版本有变化，上次记录:" + file.getVersionNumber() + ",当前tomcat该文件:" + tomcatFvi.getVersionNumber() + "。");
+								sb.append("文件版本有变化，上次记录:" + file.getVersionNumber() + ",当前tomcat该文件:"
+										+ tomcatFvi.getVersionNumber() + "。");
 							}
 						} else if (i2 != null) {
-							sb.append("文件版本有变化，上次记录:" + file.getVersionNumber() + ",当前tomcat该文件:" + tomcatFvi.getVersionNumber() + "。");
+							sb.append("文件版本有变化，上次记录:" + file.getVersionNumber() + ",当前tomcat该文件:"
+									+ tomcatFvi.getVersionNumber() + "。");
 						}
 						String s1 = tomcatFvi.getInformation();
 						String s2 = file.getInformation();
 						if (!StringUtil.isBlank(s1)) {
 							if (!s1.equals(s2)) {
-								sb.append("文件版本说明有变化，上次记录:" + file.getInformation() + ",当前:" + tomcatFvi.getInformation() + "。");
+								sb.append("文件版本说明有变化，上次记录:" + file.getInformation() + ",当前:"
+										+ tomcatFvi.getInformation() + "。");
 							}
 						} else if (!StringUtil.isBlank(s2)) {
-							sb.append("文件版本说明有变化，上次记录:" + file.getInformation() + ",当前:" + tomcatFvi.getInformation() + "。");
+							sb.append("文件版本说明有变化，上次记录:" + file.getInformation() + ",当前:" + tomcatFvi.getInformation()
+									+ "。");
 						}
 						if (!tomcatFvi.getFileSize().equals(file.getFileSize())) {
-							sb.append("文件大小有变化，上次记录:" + file.getFileSize() + ",当前tomcat该文件:" + tomcatFvi.getFileSize() + "。");
+							sb.append("文件大小有变化，上次记录:" + file.getFileSize() + ",当前tomcat该文件:" + tomcatFvi.getFileSize()
+									+ "。");
 						}
 						if (!tomcatFvi.getLastModifyTime().equals(file.getLastModifyTime())) {
-							sb.append("文件修改时间有变化，上次记录:" + file.getLastModifyTime() + ",当前tomcat该文件:" + tomcatFvi.getLastModifyTime() + "。");
+							sb.append("文件修改时间有变化，上次记录:" + file.getLastModifyTime() + ",当前tomcat该文件:"
+									+ tomcatFvi.getLastModifyTime() + "。");
 						}
 						if (!StringUtil.isBlank(sb.toString())) {
 							tomcatFvi.setDeployId(file.getDeployId());// 添加旧DeployId，以便更新
@@ -438,8 +502,10 @@ public class VersionUtil {
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
 						Map<String, Object> versionInfo = VersionUtil.getVersionInfo(file);
 						if (versionInfo != null && versionInfo.size() > 0) {
-							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : (Integer) versionInfo.get("versionNumber"));
-							fvi.setInformation(versionInfo.get("information") == null ? null : (String) versionInfo.get("information"));
+							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null
+									: (Integer) versionInfo.get("versionNumber"));
+							fvi.setInformation(versionInfo.get("information") == null ? null
+									: (String) versionInfo.get("information"));
 						}
 						vector.add(fvi);
 					}
@@ -525,8 +591,10 @@ public class VersionUtil {
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
 						Map<String, Object> versionInfo = VersionUtil.getVersionInfo(file);
 						if (versionInfo != null && versionInfo.size() > 0) {
-							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : (Integer) versionInfo.get("versionNumber"));
-							fvi.setInformation(versionInfo.get("information") == null ? null : (String) versionInfo.get("information"));
+							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null
+									: (Integer) versionInfo.get("versionNumber"));
+							fvi.setInformation(versionInfo.get("information") == null ? null
+									: (String) versionInfo.get("information"));
 						}
 						fvim.insert(fvi);
 						sqlSession.commit();
