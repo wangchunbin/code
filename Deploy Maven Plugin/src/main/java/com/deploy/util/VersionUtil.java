@@ -299,7 +299,7 @@ public class VersionUtil {
 		if (tomcatProjectfile != null && tomcatProjectfile.exists()
 				&& (tomcatProjectfile.getName().endsWith(".class") || tomcatProjectfile.getName().endsWith(".x"))) {
 			Map<String, Object> versionInfo = new HashMap<String, Object>();
-			if (tomcatProjectfile.getName().contains(".class")) {
+			if (tomcatProjectfile.getName().endsWith(".class")) {
 				String path = tomcatProjectfile.getPath();
 				String className = path
 						.substring(path.indexOf("classes\\") + "classes\\".length(), path.lastIndexOf("."))
