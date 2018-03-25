@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deploy.dao.FileCheckInfoMapper">
+	<resultMap id="BaseResultMap" type="com.deploy.dao.FileCheckInfo">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="deploy_id" property="deployId" jdbcType="INTEGER" />
+		<result column="last_deploy_id" property="lastDeployId"
+			jdbcType="INTEGER" />
+		<result column="file" property="file" jdbcType="VARCHAR" />
+		<result column="check_time" property="checkTime" jdbcType="VARCHAR" />
+		<result column="check_info" property="checkInfo" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, deploy_id, last_deploy_id, file, check_time, check_info
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.Integer">
+		select
+		<include refid="Base_Column_List" />
+		from file_check_info
+		where id = #{id,jdbcType=INTEGER}
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		delete from file_check_info
+		where id = #{id,jdbcType=INTEGER}
+	</delete>
+	<insert id="insert" parameterType="com.deploy.dao.FileCheckInfo">
+		insert into file_check_info (id, deploy_id, last_deploy_id,
+		file, check_time, check_info
+		)
+		values (#{id,jdbcType=INTEGER}, #{deployId,jdbcType=INTEGER},
+		#{lastDeployId,jdbcType=INTEGER},
+		#{file,jdbcType=VARCHAR}, #{checkTime,jdbcType=VARCHAR}, #{checkInfo,jdbcType=VARCHAR}
+		)
+	</insert>
+	<insert id="insertSelective" parameterType="com.deploy.dao.FileCheckInfo">
+		insert into file_check_info
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="deployId != null">
+				deploy_id,
+			</if>
+			<if test="lastDeployId != null">
+				last_deploy_id,
+			</if>
+			<if test="file != null">
+				file,
+			</if>
+			<if test="checkTime != null">
+				check_time,
+			</if>
+			<if test="checkInfo != null">
+				check_info,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=INTEGER},
+			</if>
+			<if test="deployId != null">
+				#{deployId,jdbcType=INTEGER},
+			</if>
+			<if test="lastDeployId != null">
+				#{lastDeployId,jdbcType=INTEGER},
+			</if>
+			<if test="file != null">
+				#{file,jdbcType=VARCHAR},
+			</if>
+			<if test="checkTime != null">
+				#{checkTime,jdbcType=VARCHAR},
+			</if>
+			<if test="checkInfo != null">
+				#{checkInfo,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective" parameterType="com.deploy.dao.FileCheckInfo">
+		update file_check_info
+		<set>
+			<if test="deployId != null">
+				deploy_id = #{deployId,jdbcType=INTEGER},
+			</if>
+			<if test="lastDeployId != null">
+				last_deploy_id = #{lastDeployId,jdbcType=INTEGER},
+			</if>
+			<if test="file != null">
+				file = #{file,jdbcType=VARCHAR},
+			</if>
+			<if test="checkTime != null">
+				check_time = #{checkTime,jdbcType=VARCHAR},
+			</if>
+			<if test="checkInfo != null">
+				check_info = #{checkInfo,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+	<update id="updateByPrimaryKey" parameterType="com.deploy.dao.FileCheckInfo">
+		update file_check_info
+		set deploy_id = #{deployId,jdbcType=INTEGER},
+		last_deploy_id = #{lastDeployId,jdbcType=INTEGER},
+		file = #{file,jdbcType=VARCHAR},
+		check_time = #{checkTime,jdbcType=VARCHAR},
+		check_info = #{checkInfo,jdbcType=VARCHAR}
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+</mapper>

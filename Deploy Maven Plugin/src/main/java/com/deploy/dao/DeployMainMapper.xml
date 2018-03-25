@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deploy.dao.DeployMainMapper">
+	<resultMap id="BaseResultMap" type="com.deploy.dao.DeployMain">
+		<id column="deploy_id" property="deployId" jdbcType="INTEGER" />
+		<result column="branch" property="branch" jdbcType="VARCHAR" />
+		<result column="project_version" property="projectVersion"
+			jdbcType="VARCHAR" />
+		<result column="git_commit_id" property="gitCommitId" jdbcType="VARCHAR" />
+		<result column="deploy_start_time" property="deployStartTime"
+			jdbcType="VARCHAR" />
+		<result column="deploy_end_time" property="deployEndTime"
+			jdbcType="VARCHAR" />
+		<result column="is_success" property="isSuccess" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		deploy_id, branch, project_version, git_commit_id, deploy_start_time,
+		deploy_end_time,
+		is_success
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.Integer">
+		select
+		<include refid="Base_Column_List" />
+		from deploy_main
+		where deploy_id = #{deployId,jdbcType=INTEGER}
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		delete from deploy_main
+		where deploy_id = #{deployId,jdbcType=INTEGER}
+	</delete>
+	<insert id="insert" useGeneratedKeys="true" keyProperty="deployId"
+		parameterType="com.deploy.dao.DeployMain">
+		insert into deploy_main (deploy_id, branch, project_version,
+		git_commit_id, deploy_start_time, deploy_end_time,
+		is_success)
+		values (#{deployId,jdbcType=INTEGER}, #{branch,jdbcType=VARCHAR},
+		#{projectVersion,jdbcType=VARCHAR},
+		#{gitCommitId,jdbcType=VARCHAR}, #{deployStartTime,jdbcType=VARCHAR},
+		#{deployEndTime,jdbcType=VARCHAR},
+		#{isSuccess,jdbcType=VARCHAR})
+	</insert>
+	<insert id="insertSelective" parameterType="com.deploy.dao.DeployMain">
+		insert into deploy_main
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="deployId != null">
+				deploy_id,
+			</if>
+			<if test="branch != null">
+				branch,
+			</if>
+			<if test="projectVersion != null">
+				project_version,
+			</if>
+			<if test="gitCommitId != null">
+				git_commit_id,
+			</if>
+			<if test="deployStartTime != null">
+				deploy_start_time,
+			</if>
+			<if test="deployEndTime != null">
+				deploy_end_time,
+			</if>
+			<if test="isSuccess != null">
+				is_success,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="deployId != null">
+				#{deployId,jdbcType=INTEGER},
+			</if>
+			<if test="branch != null">
+				#{branch,jdbcType=VARCHAR},
+			</if>
+			<if test="projectVersion != null">
+				#{projectVersion,jdbcType=VARCHAR},
+			</if>
+			<if test="gitCommitId != null">
+				#{gitCommitId,jdbcType=VARCHAR},
+			</if>
+			<if test="deployStartTime != null">
+				#{deployStartTime,jdbcType=VARCHAR},
+			</if>
+			<if test="deployEndTime != null">
+				#{deployEndTime,jdbcType=VARCHAR},
+			</if>
+			<if test="isSuccess != null">
+				#{isSuccess,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective" parameterType="com.deploy.dao.DeployMain">
+		update deploy_main
+		<set>
+			<if test="branch != null">
+				branch = #{branch,jdbcType=VARCHAR},
+			</if>
+			<if test="projectVersion != null">
+				project_version = #{projectVersion,jdbcType=VARCHAR},
+			</if>
+			<if test="gitCommitId != null">
+				git_commit_id = #{gitCommitId,jdbcType=VARCHAR},
+			</if>
+			<if test="deployStartTime != null">
+				deploy_start_time = #{deployStartTime,jdbcType=VARCHAR},
+			</if>
+			<if test="deployEndTime != null">
+				deploy_end_time = #{deployEndTime,jdbcType=VARCHAR},
+			</if>
+			<if test="isSuccess != null">
+				is_success = #{isSuccess,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where deploy_id = #{deployId,jdbcType=INTEGER}
+	</update>
+	<update id="updateByPrimaryKey" parameterType="com.deploy.dao.DeployMain">
+		update deploy_main
+		set branch = #{branch,jdbcType=VARCHAR},
+		project_version = #{projectVersion,jdbcType=VARCHAR},
+		git_commit_id = #{gitCommitId,jdbcType=VARCHAR},
+		deploy_start_time = #{deployStartTime,jdbcType=VARCHAR},
+		deploy_end_time = #{deployEndTime,jdbcType=VARCHAR},
+		is_success = #{isSuccess,jdbcType=VARCHAR}
+		where deploy_id = #{deployId,jdbcType=INTEGER}
+	</update>
+</mapper>

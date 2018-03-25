@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deploy.dao.FileVersionInfoMapper">
+	<resultMap id="BaseResultMap" type="com.deploy.dao.FileVersionInfo">
+		<id column="file" property="file" jdbcType="VARCHAR" />
+		<result column="deploy_id" property="deployId" jdbcType="INTEGER" />
+		<result column="version_number" property="versionNumber"
+			jdbcType="INTEGER" />
+		<result column="information" property="information" jdbcType="VARCHAR" />
+		<result column="last_modify_time" property="lastModifyTime"
+			jdbcType="VARCHAR" />
+		<result column="file_size" property="fileSize" jdbcType="INTEGER" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		file, deploy_id, version_number, information, last_modify_time, file_size
+	</sql>
+	<delete id="deleteAll">
+		delete from file_version_info
+	</delete>
+	<select id="selectAll" resultMap="BaseResultMap">
+		select
+		<include refid="Base_Column_List" />
+		from file_version_info
+	</select>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.String">
+		select
+		<include refid="Base_Column_List" />
+		from file_version_info
+		where file = #{file,jdbcType=VARCHAR}
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
+		delete from file_version_info
+		where file = #{file,jdbcType=VARCHAR}
+	</delete>
+	<insert id="insert" parameterType="com.deploy.dao.FileVersionInfo">
+		insert into file_version_info (file, deploy_id, version_number,
+		information, last_modify_time, file_size
+		)
+		values (#{file,jdbcType=VARCHAR}, #{deployId,jdbcType=INTEGER},
+		#{versionNumber,jdbcType=INTEGER},
+		#{information,jdbcType=VARCHAR}, #{lastModifyTime,jdbcType=VARCHAR}, #{fileSize,jdbcType=INTEGER}
+		)
+	</insert>
+	<insert id="insertSelective" parameterType="com.deploy.dao.FileVersionInfo">
+		insert into file_version_info
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="file != null">
+				file,
+			</if>
+			<if test="deployId != null">
+				deploy_id,
+			</if>
+			<if test="versionNumber != null">
+				version_number,
+			</if>
+			<if test="information != null">
+				information,
+			</if>
+			<if test="lastModifyTime != null">
+				last_modify_time,
+			</if>
+			<if test="fileSize != null">
+				file_size,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="file != null">
+				#{file,jdbcType=VARCHAR},
+			</if>
+			<if test="deployId != null">
+				#{deployId,jdbcType=INTEGER},
+			</if>
+			<if test="versionNumber != null">
+				#{versionNumber,jdbcType=INTEGER},
+			</if>
+			<if test="information != null">
+				#{information,jdbcType=VARCHAR},
+			</if>
+			<if test="lastModifyTime != null">
+				#{lastModifyTime,jdbcType=VARCHAR},
+			</if>
+			<if test="fileSize != null">
+				#{fileSize,jdbcType=INTEGER},
+			</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective" parameterType="com.deploy.dao.FileVersionInfo">
+		update file_version_info
+		<set>
+			<if test="deployId != null">
+				deploy_id = #{deployId,jdbcType=INTEGER},
+			</if>
+			<if test="versionNumber != null">
+				version_number = #{versionNumber,jdbcType=INTEGER},
+			</if>
+			<if test="information != null">
+				information = #{information,jdbcType=VARCHAR},
+			</if>
+			<if test="lastModifyTime != null">
+				last_modify_time = #{lastModifyTime,jdbcType=VARCHAR},
+			</if>
+			<if test="fileSize != null">
+				file_size = #{fileSize,jdbcType=INTEGER},
+			</if>
+		</set>
+		where file = #{file,jdbcType=VARCHAR}
+	</update>
+	<update id="updateByPrimaryKey" parameterType="com.deploy.dao.FileVersionInfo">
+		update file_version_info
+		set deploy_id = #{deployId,jdbcType=INTEGER},
+		version_number = #{versionNumber,jdbcType=INTEGER},
+		information = #{information,jdbcType=VARCHAR},
+		last_modify_time = #{lastModifyTime,jdbcType=VARCHAR},
+		file_size = #{fileSize,jdbcType=INTEGER}
+		where file = #{file,jdbcType=VARCHAR}
+	</update>
+</mapper>

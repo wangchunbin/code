@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deploy.dao.GitDiffInfoMapper">
+	<resultMap id="BaseResultMap" type="com.deploy.dao.GitDiffInfo">
+		<id column="id" property="id" jdbcType="INTEGER" />
+		<result column="deploy_id" property="deployId" jdbcType="INTEGER" />
+		<result column="git_commit_id" property="gitCommitId" jdbcType="VARCHAR" />
+		<result column="last_git_commit_id" property="lastGitCommitId"
+			jdbcType="VARCHAR" />
+		<result column="file" property="file" jdbcType="VARCHAR" />
+		<result column="modify_type" property="modifyType" jdbcType="VARCHAR" />
+	</resultMap>
+	<sql id="Base_Column_List">
+		id, deploy_id, git_commit_id, last_git_commit_id, file, modify_type
+	</sql>
+	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
+		parameterType="java.lang.Integer">
+		select
+		<include refid="Base_Column_List" />
+		from git_diff_info
+		where id = #{id,jdbcType=INTEGER}
+	</select>
+	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+		delete from git_diff_info
+		where id = #{id,jdbcType=INTEGER}
+	</delete>
+	<insert id="insert" parameterType="com.deploy.dao.GitDiffInfo">
+		insert into git_diff_info (id, deploy_id, git_commit_id,
+		last_git_commit_id, file, modify_type
+		)
+		values (#{id,jdbcType=INTEGER}, #{deployId,jdbcType=INTEGER},
+		#{gitCommitId,jdbcType=VARCHAR},
+		#{lastGitCommitId,jdbcType=VARCHAR}, #{file,jdbcType=VARCHAR}, #{modifyType,jdbcType=VARCHAR}
+		)
+	</insert>
+	<insert id="insertSelective" parameterType="com.deploy.dao.GitDiffInfo">
+		insert into git_diff_info
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				id,
+			</if>
+			<if test="deployId != null">
+				deploy_id,
+			</if>
+			<if test="gitCommitId != null">
+				git_commit_id,
+			</if>
+			<if test="lastGitCommitId != null">
+				last_git_commit_id,
+			</if>
+			<if test="file != null">
+				file,
+			</if>
+			<if test="modifyType != null">
+				modify_type,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=INTEGER},
+			</if>
+			<if test="deployId != null">
+				#{deployId,jdbcType=INTEGER},
+			</if>
+			<if test="gitCommitId != null">
+				#{gitCommitId,jdbcType=VARCHAR},
+			</if>
+			<if test="lastGitCommitId != null">
+				#{lastGitCommitId,jdbcType=VARCHAR},
+			</if>
+			<if test="file != null">
+				#{file,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyType != null">
+				#{modifyType,jdbcType=VARCHAR},
+			</if>
+		</trim>
+	</insert>
+	<update id="updateByPrimaryKeySelective" parameterType="com.deploy.dao.GitDiffInfo">
+		update git_diff_info
+		<set>
+			<if test="deployId != null">
+				deploy_id = #{deployId,jdbcType=INTEGER},
+			</if>
+			<if test="gitCommitId != null">
+				git_commit_id = #{gitCommitId,jdbcType=VARCHAR},
+			</if>
+			<if test="lastGitCommitId != null">
+				last_git_commit_id = #{lastGitCommitId,jdbcType=VARCHAR},
+			</if>
+			<if test="file != null">
+				file = #{file,jdbcType=VARCHAR},
+			</if>
+			<if test="modifyType != null">
+				modify_type = #{modifyType,jdbcType=VARCHAR},
+			</if>
+		</set>
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+	<update id="updateByPrimaryKey" parameterType="com.deploy.dao.GitDiffInfo">
+		update git_diff_info
+		set deploy_id = #{deployId,jdbcType=INTEGER},
+		git_commit_id = #{gitCommitId,jdbcType=VARCHAR},
+		last_git_commit_id = #{lastGitCommitId,jdbcType=VARCHAR},
+		file = #{file,jdbcType=VARCHAR},
+		modify_type = #{modifyType,jdbcType=VARCHAR}
+		where id = #{id,jdbcType=INTEGER}
+	</update>
+</mapper>

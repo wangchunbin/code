@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.deploy.dao.FileVersionModifyBakMapper">
+	<resultMap id="BaseResultMap" type="com.deploy.dao.FileVersionModifyBak">
+		<result column="ID" property="id" jdbcType="INTEGER" />
+		<result column="file" property="file" jdbcType="VARCHAR" />
+		<result column="deploy_id" property="deployId" jdbcType="INTEGER" />
+		<result column="version_number" property="versionNumber"
+			jdbcType="INTEGER" />
+		<result column="infomation" property="infomation" jdbcType="VARCHAR" />
+		<result column="last_modify_time" property="lastModifyTime"
+			jdbcType="VARCHAR" />
+		<result column="file_size" property="fileSize" jdbcType="INTEGER" />
+	</resultMap>
+	<insert id="insert" parameterType="com.deploy.dao.FileVersionModifyBak">
+		insert into file_version_modify_bak (ID, file, deploy_id,
+		version_number, infomation, last_modify_time,
+		file_size)
+		values (#{id,jdbcType=INTEGER}, #{file,jdbcType=VARCHAR},
+		#{deployId,jdbcType=INTEGER},
+		#{versionNumber,jdbcType=INTEGER}, #{infomation,jdbcType=VARCHAR}, #{lastModifyTime,jdbcType=VARCHAR},
+		#{fileSize,jdbcType=INTEGER})
+	</insert>
+	<insert id="insertSelective" parameterType="com.deploy.dao.FileVersionModifyBak">
+		insert into file_version_modify_bak
+		<trim prefix="(" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				ID,
+			</if>
+			<if test="file != null">
+				file,
+			</if>
+			<if test="deployId != null">
+				deploy_id,
+			</if>
+			<if test="versionNumber != null">
+				version_number,
+			</if>
+			<if test="infomation != null">
+				infomation,
+			</if>
+			<if test="lastModifyTime != null">
+				last_modify_time,
+			</if>
+			<if test="fileSize != null">
+				file_size,
+			</if>
+		</trim>
+		<trim prefix="values (" suffix=")" suffixOverrides=",">
+			<if test="id != null">
+				#{id,jdbcType=INTEGER},
+			</if>
+			<if test="file != null">
+				#{file,jdbcType=VARCHAR},
+			</if>
+			<if test="deployId != null">
+				#{deployId,jdbcType=INTEGER},
+			</if>
+			<if test="versionNumber != null">
+				#{versionNumber,jdbcType=INTEGER},
+			</if>
+			<if test="infomation != null">
+				#{infomation,jdbcType=VARCHAR},
+			</if>
+			<if test="lastModifyTime != null">
+				#{lastModifyTime,jdbcType=VARCHAR},
+			</if>
+			<if test="fileSize != null">
+				#{fileSize,jdbcType=INTEGER},
+			</if>
+		</trim>
+	</insert>
+</mapper>
