@@ -21,6 +21,8 @@ public class DeployConfig {
 
     private String tomcatProjectDir;
 
+    private Integer tomcatPort;
+
     private String driverClassName;
 
     private String url;
@@ -29,7 +31,7 @@ public class DeployConfig {
 
     private String password;
 
-    private String dataCorrectionDir;
+    private String sqlAtGitRepositoryPath;
 
     private String separator;
 
@@ -113,6 +115,14 @@ public class DeployConfig {
         this.tomcatProjectDir = tomcatProjectDir == null ? null : tomcatProjectDir.trim();
     }
 
+    public Integer getTomcatPort() {
+        return tomcatPort;
+    }
+
+    public void setTomcatPort(Integer tomcatPort) {
+        this.tomcatPort = tomcatPort;
+    }
+
     public String getDriverClassName() {
         return driverClassName;
     }
@@ -145,15 +155,15 @@ public class DeployConfig {
         this.password = password == null ? null : password.trim();
     }
 
-    public String getDataCorrectionDir() {
-        return dataCorrectionDir;
-    }
+    public String getSqlAtGitRepositoryPath() {
+		return sqlAtGitRepositoryPath;
+	}
 
-    public void setDataCorrectionDir(String dataCorrectionDir) {
-        this.dataCorrectionDir = dataCorrectionDir == null ? null : dataCorrectionDir.trim();
-    }
+	public void setSqlAtGitRepositoryPath(String sqlAtGitRepositoryPath) {
+		this.sqlAtGitRepositoryPath = sqlAtGitRepositoryPath;
+	}
 
-    public String getSeparator() {
+	public String getSeparator() {
         return separator;
     }
 

@@ -34,8 +34,7 @@ public class GitUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Repository cloneByCmd(String remoteAddress, String localGitPath, String branch, String userName, String email)
-			throws Exception {
+	public static Repository cloneByCmd(String remoteAddress, String localGitPath, String branch, String userName, String email) throws Exception {
 		File dir = new File(localGitPath);
 		if (!dir.exists()) {
 			dir.mkdirs();
@@ -44,8 +43,7 @@ public class GitUtil {
 		CmdUtil.execCMD(localGitPath, "git config --global user.email \"" + email + "\"");
 		CmdUtil.execCMD(localGitPath, "git clone -b " + branch + " " + remoteAddress + " " + localGitPath);
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository repository = builder.setGitDir(new File(localGitPath + "/.git")).readEnvironment().findGitDir()
-				.build();
+		Repository repository = builder.setGitDir(new File(localGitPath + "/.git")).readEnvironment().findGitDir().build();
 		return repository;
 	}
 
@@ -57,7 +55,7 @@ public class GitUtil {
 	 * @throws Exception
 	 */
 	public static Repository getLocalRepository(String localGitAddress) throws Exception {
-		Git git =null;
+		Git git = null;
 		try {
 			git = Git.open(new File(localGitAddress));
 			git.log().call();
@@ -78,8 +76,7 @@ public class GitUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Repository clone(String remoteAddress, String localGitPath, String branch, String userName,
-			String passWord) throws Exception {
+	public static Repository clone(String remoteAddress, String localGitPath, String branch, String userName, String passWord) throws Exception {
 		FileUtil.deleteDirOrFile(localGitPath);
 		File localPath = new File(localGitPath);
 		localPath.mkdir();
@@ -102,8 +99,7 @@ public class GitUtil {
 	 * @param remoteBranchName
 	 * @throws Exception
 	 */
-	public static void pull(Repository localRepository, String remoteBranchName, String userName, String passWord)
-			throws Exception {
+	public static void pull(Repository localRepository, String remoteBranchName, String userName, String passWord) throws Exception {
 		Git git = new Git(localRepository);
 		UsernamePasswordCredentialsProvider user = new UsernamePasswordCredentialsProvider(userName, passWord);
 		git.pull().setRemoteBranchName(remoteBranchName).setCredentialsProvider(user).call();
@@ -132,6 +128,26 @@ public class GitUtil {
 	}
 
 	/**
+	 * 获取最近一次提交备注
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public static String getLastCommitMessage(Repository localRepository) throws Exception {
+		Git git = new Git(localRepository);
+		Iterable<RevCommit> iterable = git.log().call();
+		Iterator<RevCommit> iterator = iterable.iterator();
+		String message = null;
+		while (iterator.hasNext()) {
+			RevCommit rc = iterator.next();
+			message = rc.getShortMessage();
+			break;
+		}
+		git.close();
+		return message;
+	}
+
+	/**
 	 * 对比两个版本差异,获取修改的文件及修改类型
 	 * 
 	 * @param localRepository
@@ -139,8 +155,7 @@ public class GitUtil {
 	 * @param Parent
 	 * @throws Exception
 	 */
-	public static Map<String, String> diff(Repository localRepository, String oldCommitID, String newCommitID)
-			throws Exception {
+	public static Map<String, String> diff(Repository localRepository, String oldCommitID, String newCommitID) throws Exception {
 		Map<String, String> map = new HashMap<String, String>();
 		Git git = new Git(localRepository);
 		ObjectReader reader = localRepository.newObjectReader();
@@ -151,6 +166,7 @@ public class GitUtil {
 		CanonicalTreeParser newTreeIter = new CanonicalTreeParser();
 		newTreeIter.reset(reader, head);
 		List<DiffEntry> diffs = git.diff().setNewTree(newTreeIter).setOldTree(oldTreeIter).call();
+		//DasHealthCare/javahis5/src/com/javahis/util/Version.java:DELETE
 		for (DiffEntry diffEntry : diffs) {
 			map.put((diffEntry.getNewPath().contains("null") ? diffEntry.getOldPath() : diffEntry.getNewPath()), diffEntry.getChangeType().toString());
 		}

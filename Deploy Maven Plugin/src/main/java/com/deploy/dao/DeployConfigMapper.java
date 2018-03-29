@@ -1,5 +1,7 @@
 package com.deploy.dao;
 
+import com.deploy.dao.DeployConfig;
+
 public interface DeployConfigMapper {
     int deleteByPrimaryKey(Integer deployId);
 

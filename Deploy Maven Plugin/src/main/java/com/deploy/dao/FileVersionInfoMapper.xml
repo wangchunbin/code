@@ -12,7 +12,8 @@
 		<result column="file_size" property="fileSize" jdbcType="INTEGER" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		file, deploy_id, version_number, information, last_modify_time, file_size
+		file, deploy_id, version_number, information,
+		last_modify_time, file_size
 	</sql>
 	<delete id="deleteAll">
 		delete from file_version_info
@@ -22,6 +23,13 @@
 		<include refid="Base_Column_List" />
 		from file_version_info
 	</select>
+	<select id="selectByFileName" resultMap="BaseResultMap"
+		parameterType="map">
+		select
+		<include refid="Base_Column_List" />
+		from file_version_info
+		where file like '%${shortName}%'
+	</select>
 	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
 		parameterType="java.lang.String">
 		select
@@ -30,16 +38,21 @@
 		where file = #{file,jdbcType=VARCHAR}
 	</select>
 	<delete id="deleteByPrimaryKey" parameterType="java.lang.String">
-		delete from file_version_info
+		delete from
+		file_version_info
 		where file = #{file,jdbcType=VARCHAR}
 	</delete>
 	<insert id="insert" parameterType="com.deploy.dao.FileVersionInfo">
-		insert into file_version_info (file, deploy_id, version_number,
-		information, last_modify_time, file_size
+		insert into file_version_info
+		(file, deploy_id, version_number,
+		information, last_modify_time,
+		file_size
 		)
-		values (#{file,jdbcType=VARCHAR}, #{deployId,jdbcType=INTEGER},
+		values (#{file,jdbcType=VARCHAR},
+		#{deployId,jdbcType=INTEGER},
 		#{versionNumber,jdbcType=INTEGER},
-		#{information,jdbcType=VARCHAR}, #{lastModifyTime,jdbcType=VARCHAR}, #{fileSize,jdbcType=INTEGER}
+		#{information,jdbcType=VARCHAR}, #{lastModifyTime,jdbcType=VARCHAR},
+		#{fileSize,jdbcType=INTEGER}
 		)
 	</insert>
 	<insert id="insertSelective" parameterType="com.deploy.dao.FileVersionInfo">
@@ -107,12 +120,16 @@
 		where file = #{file,jdbcType=VARCHAR}
 	</update>
 	<update id="updateByPrimaryKey" parameterType="com.deploy.dao.FileVersionInfo">
-		update file_version_info
+		update
+		file_version_info
 		set deploy_id = #{deployId,jdbcType=INTEGER},
 		version_number = #{versionNumber,jdbcType=INTEGER},
-		information = #{information,jdbcType=VARCHAR},
-		last_modify_time = #{lastModifyTime,jdbcType=VARCHAR},
-		file_size = #{fileSize,jdbcType=INTEGER}
+		information =
+		#{information,jdbcType=VARCHAR},
+		last_modify_time =
+		#{lastModifyTime,jdbcType=VARCHAR},
+		file_size =
+		#{fileSize,jdbcType=INTEGER}
 		where file = #{file,jdbcType=VARCHAR}
 	</update>
 </mapper>

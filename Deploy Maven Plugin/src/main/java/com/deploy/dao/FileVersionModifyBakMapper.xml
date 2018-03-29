@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.deploy.dao.FileVersionModifyBakMapper">
-	<resultMap id="BaseResultMap" type="com.deploy.dao.FileVersionModifyBak">
+<mapper namespace="com.das.deploy.FileVersionModifyBakMapper">
+	<resultMap id="BaseResultMap" type="com.das.deploy.FileVersionModifyBak">
 		<result column="ID" property="id" jdbcType="INTEGER" />
 		<result column="file" property="file" jdbcType="VARCHAR" />
 		<result column="deploy_id" property="deployId" jdbcType="INTEGER" />
@@ -12,7 +12,7 @@
 			jdbcType="VARCHAR" />
 		<result column="file_size" property="fileSize" jdbcType="INTEGER" />
 	</resultMap>
-	<insert id="insert" parameterType="com.deploy.dao.FileVersionModifyBak">
+	<insert id="insert" parameterType="com.das.deploy.FileVersionModifyBak">
 		insert into file_version_modify_bak (ID, file, deploy_id,
 		version_number, infomation, last_modify_time,
 		file_size)
@@ -21,7 +21,7 @@
 		#{versionNumber,jdbcType=INTEGER}, #{infomation,jdbcType=VARCHAR}, #{lastModifyTime,jdbcType=VARCHAR},
 		#{fileSize,jdbcType=INTEGER})
 	</insert>
-	<insert id="insertSelective" parameterType="com.deploy.dao.FileVersionModifyBak">
+	<insert id="insertSelective" parameterType="com.das.deploy.FileVersionModifyBak">
 		insert into file_version_modify_bak
 		<trim prefix="(" suffix=")" suffixOverrides=",">
 			<if test="id != null">

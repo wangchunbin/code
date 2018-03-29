@@ -1,0 +1,92 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.deploy</groupId>
+	<artifactId>exec</artifactId>
+	<version>1.0</version>
+	<name>Application</name>
+	<description>Application</description>
+	<repositories>
+		<repository>
+			<id>nexus</id>
+			<name>nexus</name>
+			<url>http://192.168.123.247:8081/nexus/content/groups/public</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	<pluginRepositories>
+		<pluginRepository>
+			<id>nexus_plugin</id>
+			<name>nexus_plugin</name>
+			<url>http://192.168.123.247:8081/nexus/content/groups/public</url>
+			<layout>default</layout>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+	</pluginRepositories>
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.deploy</groupId>
+				<artifactId>deploy-maven-plugin</artifactId>
+				<version>1.5</version>
+				<configuration>
+					<!-- 远程仓库URL地址 -->
+					<gitRemoteAddress>http://192.168.123.199:10080/root/DASHISCODE.git</gitRemoteAddress>
+					<!-- 本地仓库地址,注意路径分隔符使用"/" -->
+					<localGitPath>C:/Users/wangchunbin/Desktop/test</localGitPath>
+					<!-- 项目在git仓库的相对目录路径(在本地相对于localGitPath路径),注意路径分隔符使用"/" -->
+					<projectAtGitRepositoryPath>DasHealthCare/javahis5</projectAtGitRepositoryPath>
+					<!-- 分支名称 -->
+					<branch>wangchunbin</branch>
+					<!-- gitLab或者gitHub 用户名 -->
+					<gitRemoteUserName>wangchunbin</gitRemoteUserName>
+					<!-- gitLab或者gitHub 注册邮箱 -->
+					<gitRemoteEmail>474103319@qq.com</gitRemoteEmail>
+					<!-- gitLab或者gitHub 密码 -->
+					<gitRemotePassWord>11111111</gitRemotePassWord>
+					<!-- 原文件备份目录,注意路径分隔符使用"/" -->
+					<backupDir>C:/Users/wangchunbin/Desktop/bak</backupDir>
+					<!-- tomcat中项目路径,注意路径分隔符要使用"/" -->
+					<tomcatProjectDir>C:/Users/wangchunbin/Desktop/apache-tomcat-7.0.85/webapps/javahis5</tomcatProjectDir>
+					<!-- tomcat端口 -->
+					<tomcatPort>8080</tomcatPort>
+					<!-- 数据库驱动类 ，目前只支持oracle,该配置不需要改 -->
+					<driverClassName>oracle.jdbc.driver.OracleDriver</driverClassName>
+					<!-- 数据库连接URL -->
+					<url>jdbc:oracle:thin:@192.168.123.246:1521:DAS213</url>
+					<!-- 数据库连接用户名 -->
+					<username>JAVAHIS</username>
+					<!-- 数据库连接密码 -->
+					<password>JAVAHIS</password>
+					<!-- sql脚本中语句分割符,默认#END -->
+					<!-- <separator></separator> -->
+
+					<!-- ###### 注意:下列配置在使用hisDeploy插件时使用！！！ ###### -->
+					<!-- 增量SQL脚本及数据execl在Git仓库中相对目录路径(在本地相对于本地仓库localGitPath路径),注意路径分隔符要使用"/",另外注释掉该配置表示不执行相关SQL脚本 -->
+					<!-- <sqlAtGitRepositoryPath></sqlAtGitRepositoryPath> -->
+
+					<!-- ###### 注意:下列配置在使用hisDBInit插件时使用！！！ ###### -->
+					<!-- SQL脚本及数据execl存放目录,注意路径分隔符要使用"/",另外注释掉该配置表示不执行相关SQL脚本 -->
+					<!-- <dataDir>data</dataDir> -->
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+</project>

@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
@@ -34,8 +33,12 @@ import com.deploy.mojo.DeployMojo;
  *
  */
 public class SqliteUtil {
-	public  static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+	public static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static SqlSessionFactory ssf = null;
+	
+	public static void main(String[] args) throws IOException {
+		getSqlSessionFactory();
+	}
 
 	/**
 	 * 获取mybatis SqlSessionFactory
@@ -45,8 +48,8 @@ public class SqliteUtil {
 	 */
 	public static synchronized SqlSessionFactory getSqlSessionFactory() throws IOException {
 		if (ssf == null) {
-			String resource = "com/deploy/dao/MybatisConfig.xml";
-			InputStream inputStream = Resources.getResourceAsStream(resource);
+			String resource = "/com/das/his/dao/MybatisConfig.xml";
+			InputStream inputStream = SqliteUtil.class.getResourceAsStream(resource);
 			ssf = new SqlSessionFactoryBuilder().build(inputStream);
 			return ssf;
 		} else {
@@ -66,9 +69,9 @@ public class SqliteUtil {
 		String sql = "CREATE TABLE deploy_config (" + "deploy_id  INTEGER NOT NULL," + "git_remote_address  TEXT(100),"
 				+ "local_git_path  TEXT(100)," + "project_at_git_repository_path  TEXT(100)," + "branch  TEXT(100),"
 				+ "git_remote_username  TEXT(100)," + "git_remote_email  TEXT(100)," + "git_remote_password  TEXT(100),"
-				+ "backup_dir  TEXT(100)," + "tomcat_project_dir  TEXT(100)," + "driver_class_name  TEXT(100),"
-				+ "url  TEXT(100)," + "username  TEXT(100)," + "password  TEXT(100),"
-				+ "data_correction_dir  TEXT(100)," + "separator  TEXT(100)," + "PRIMARY KEY (deploy_id)" + ")";
+				+ "backup_dir  TEXT(100)," + "tomcat_project_dir  TEXT(100)," + "tomcat_port  INTEGER,"
+				+ "driver_class_name  TEXT(100)," + "url  TEXT(100)," + "username  TEXT(100)," + "password  TEXT(100),"
+				+ "sql_at_git_repository_path  TEXT(100)," + "separator  TEXT(100)," + "PRIMARY KEY (deploy_id)" + ")";
 		commonParam.setSql(sql);
 		cm.executeUpdateSql(commonParam);
 		sqlSession.commit();
@@ -148,7 +151,7 @@ public class SqliteUtil {
 		DeployConfig dc = new DeployConfig();
 		dc.setBackupDir(dm.getBackupDir().getPath());
 		dc.setBranch(dm.getBranch());
-		dc.setDataCorrectionDir(dm.getDataCorrectionDir() == null ? null : dm.getDataCorrectionDir().getPath());
+		dc.setSqlAtGitRepositoryPath(dm.getSqlAtGitRepositoryPath());
 		dc.setDeployId(deployId);
 		dc.setDriverClassName(dm.getDriverClassName());
 		dc.setGitRemoteAddress(dm.getGitRemoteAddress());
@@ -160,6 +163,7 @@ public class SqliteUtil {
 		dc.setProjectAtGitRepositoryPath(dm.getProjectAtGitRepositoryPath());
 		dc.setSeparator(dm.getSeparator());
 		dc.setTomcatProjectDir(dm.getTomcatProjectDir().getPath());
+		dc.setTomcatPort(dm.getTomcatPort());
 		dc.setUrl(dm.getUrl());
 		dc.setUsername(dm.getUsername());
 		dcm.insert(dc);
@@ -175,8 +179,7 @@ public class SqliteUtil {
 	 * @param checkInfo
 	 * @throws IOException
 	 */
-	public static void saveFileVersionCheckInfo(Integer deployId, Integer lastDeployId,
-			Map<FileVersionInfo, String> checkInfo) throws IOException {
+	public static void saveFileVersionCheckInfo(Integer deployId, Integer lastDeployId, Map<FileVersionInfo, String> checkInfo) throws IOException {
 		if (checkInfo != null && checkInfo.size() > 0) {
 			SqlSession sqlSession = getSqlSessionFactory().openSession();
 			FileCheckInfoMapper fcim = sqlSession.getMapper(FileCheckInfoMapper.class);
@@ -188,8 +191,8 @@ public class SqliteUtil {
 				record.setFile(entry.getKey().getFile());
 				record.setLastDeployId(lastDeployId);
 				fcim.insert(record);
-				sqlSession.commit();
 			}
+			sqlSession.commit();
 			sqlSession.close();
 		}
 	}
@@ -203,8 +206,7 @@ public class SqliteUtil {
 	 * @param diffInfo
 	 * @throws IOException
 	 */
-	public static void saveGitDiffInfo(Integer deployId, String commitId, String lastCommitId,
-			Map<String, String> diffInfo) throws IOException {
+	public static void saveGitDiffInfo(Integer deployId, String commitId, String lastCommitId, Map<String, String> diffInfo) throws IOException {
 		if (diffInfo != null && diffInfo.size() > 0) {
 			SqlSession sqlSession = getSqlSessionFactory().openSession();
 			GitDiffInfoMapper gdim = sqlSession.getMapper(GitDiffInfoMapper.class);
@@ -216,8 +218,8 @@ public class SqliteUtil {
 				record.setFile(entry.getKey());
 				record.setModifyType(entry.getValue());
 				gdim.insert(record);
-				sqlSession.commit();
 			}
+			sqlSession.commit();
 			sqlSession.close();
 		}
 	}
@@ -241,8 +243,31 @@ public class SqliteUtil {
 				fvmb.setLastModifyTime(fvi.getLastModifyTime());
 				fvmb.setVersionNumber(fvi.getVersionNumber());
 				fvmbm.insert(fvmb);
-				sqlSession.commit();
 			}
+			sqlSession.commit();
+			sqlSession.close();
+		}
+	}
+
+	/**
+	 * 插入单条文件版本备份记录
+	 * 
+	 * @param fvi
+	 * @throws IOException
+	 */
+	public static void insertFileVersionModifyBak(FileVersionInfo fvi) throws IOException {
+		if (fvi != null) {
+			SqlSession sqlSession = getSqlSessionFactory().openSession();
+			FileVersionModifyBakMapper fvmbm = sqlSession.getMapper(FileVersionModifyBakMapper.class);
+			FileVersionModifyBak fvmb = new FileVersionModifyBak();
+			fvmb.setDeployId(fvi.getDeployId());
+			fvmb.setFile(fvi.getFile());
+			fvmb.setFileSize(fvi.getFileSize());
+			fvmb.setInfomation(fvi.getInformation());
+			fvmb.setLastModifyTime(fvi.getLastModifyTime());
+			fvmb.setVersionNumber(fvi.getVersionNumber());
+			fvmbm.insert(fvmb);
+			sqlSession.commit();
 			sqlSession.close();
 		}
 	}
@@ -270,6 +295,78 @@ public class SqliteUtil {
 		SqlSession sqlSession = getSqlSessionFactory().openSession();
 		DeployMainMapper dmm = sqlSession.getMapper(DeployMainMapper.class);
 		dmm.updateByPrimaryKey(deployMain);
+		sqlSession.commit();
+		sqlSession.close();
+	}
+
+	/**
+	 * 获取单条文件版本记录
+	 * 
+	 * @param file
+	 * @return
+	 * @throws IOException
+	 */
+	public static FileVersionInfo getFileVersinInfo(String file) throws IOException {
+		SqlSession sqlSession = getSqlSessionFactory().openSession();
+		FileVersionInfoMapper fvim = sqlSession.getMapper(FileVersionInfoMapper.class);
+		FileVersionInfo fvi = fvim.selectByPrimaryKey(file);
+		sqlSession.close();
+		return fvi;
+	}
+
+	/**
+	 * 更新单条文件版本记录
+	 * 
+	 * @param fvi
+	 * @throws IOException
+	 */
+	public static void updateFileVersionInfo(FileVersionInfo fvi) throws IOException {
+		SqlSession sqlSession = getSqlSessionFactory().openSession();
+		FileVersionInfoMapper fvim = sqlSession.getMapper(FileVersionInfoMapper.class);
+		fvim.updateByPrimaryKey(fvi);
+		sqlSession.commit();
+		sqlSession.close();
+	}
+
+	/**
+	 * 删除单条文件版本记录
+	 * 
+	 * @param file
+	 * @throws IOException
+	 */
+	public static void deleteFileVersionInfo(String file) throws IOException {
+		SqlSession sqlSession = getSqlSessionFactory().openSession();
+		FileVersionInfoMapper fvim = sqlSession.getMapper(FileVersionInfoMapper.class);
+		fvim.deleteByPrimaryKey(file);
+		sqlSession.commit();
+		sqlSession.close();
+	}
+	
+	/**
+	 * 通过文件名字模糊查询文件版本信息
+	 * 
+	 * @param shortName
+	 * @return
+	 * @throws IOException
+	 */
+	public static FileVersionInfo findFileVersionInfoByFileName(Map<String,String> param) throws IOException{
+		SqlSession sqlSession = getSqlSessionFactory().openSession();
+		FileVersionInfoMapper fvim = sqlSession.getMapper(FileVersionInfoMapper.class);
+		FileVersionInfo fvi = fvim.selectByFileName(param);
+		sqlSession.close();
+		return fvi;
+	}
+	
+	/**
+	 * 插入文件版本信息
+	 * 
+	 * @param fvi
+	 * @throws IOException
+	 */
+	public static void insertFileVersionInfo(FileVersionInfo fvi) throws IOException {
+		SqlSession sqlSession = getSqlSessionFactory().openSession();
+		FileVersionInfoMapper fvim = sqlSession.getMapper(FileVersionInfoMapper.class);
+		fvim.insert(fvi);
 		sqlSession.commit();
 		sqlSession.close();
 	}

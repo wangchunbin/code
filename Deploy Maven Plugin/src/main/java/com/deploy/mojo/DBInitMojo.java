@@ -24,12 +24,12 @@ import com.deploy.util.DatabaseUtil;
 import com.deploy.util.ExcelUtil;
 
 /**
- * his数据库初始化插件mojo类
+ * 数据库初始化插件mojo类
  * 
  * @author WangChunBin
  *
  */
-@Mojo(name = "dbInit")
+@Mojo(name = "DBInit")
 public class DBInitMojo extends AbstractMojo {
 	/**
 	 * 数据库驱动类

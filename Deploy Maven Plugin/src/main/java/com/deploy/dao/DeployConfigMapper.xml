@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
-<mapper namespace="com.das.deploy.DeployConfigMapper">
-	<resultMap id="BaseResultMap" type="com.das.deploy.DeployConfig">
+<mapper namespace="com.deploy.dao.DeployConfigMapper">
+	<resultMap id="BaseResultMap" type="com.deploy.dao.DeployConfig">
 		<id column="deploy_id" property="deployId" jdbcType="INTEGER" />
 		<result column="git_remote_address" property="gitRemoteAddress"
 			jdbcType="VARCHAR" />
@@ -19,21 +19,26 @@
 		<result column="backup_dir" property="backupDir" jdbcType="VARCHAR" />
 		<result column="tomcat_project_dir" property="tomcatProjectDir"
 			jdbcType="VARCHAR" />
+		<result column="tomcat_port" property="tomcatPort" jdbcType="INTEGER" />
 		<result column="driver_class_name" property="driverClassName"
 			jdbcType="VARCHAR" />
 		<result column="url" property="url" jdbcType="VARCHAR" />
 		<result column="username" property="username" jdbcType="VARCHAR" />
 		<result column="password" property="password" jdbcType="VARCHAR" />
-		<result column="data_correction_dir" property="dataCorrectionDir"
+		<result column="sql_at_git_repository_path" property="sqlAtGitRepositoryPath"
 			jdbcType="VARCHAR" />
 		<result column="separator" property="separator" jdbcType="VARCHAR" />
 	</resultMap>
 	<sql id="Base_Column_List">
-		deploy_id, git_remote_address, local_git_path, project_at_git_repository_path,
+		deploy_id, git_remote_address, local_git_path,
+		project_at_git_repository_path,
 		branch,
-		git_remote_username, git_remote_email, git_remote_password, backup_dir,
+		git_remote_username,
+		git_remote_email, git_remote_password, backup_dir,
 		tomcat_project_dir,
-		driver_class_name, url, username, password, data_correction_dir, separator
+		tomcat_port, driver_class_name, url, username, password,
+		sql_at_git_repository_path,
+		separator
 	</sql>
 	<select id="selectByPrimaryKey" resultMap="BaseResultMap"
 		parameterType="java.lang.Integer">
@@ -43,30 +48,34 @@
 		where deploy_id = #{deployId,jdbcType=INTEGER}
 	</select>
 	<delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
-		delete from deploy_config
+		delete from
+		deploy_config
 		where deploy_id = #{deployId,jdbcType=INTEGER}
 	</delete>
-	<insert id="insert" parameterType="com.das.deploy.DeployConfig">
-		insert into deploy_config (deploy_id, git_remote_address,
+	<insert id="insert" parameterType="com.deploy.dao.DeployConfig">
+		insert into deploy_config
+		(deploy_id, git_remote_address,
 		local_git_path,
 		project_at_git_repository_path, branch, git_remote_username,
 		git_remote_email, git_remote_password, backup_dir,
-		tomcat_project_dir, driver_class_name, url,
-		username, password, data_correction_dir,
-		separator)
-		values (#{deployId,jdbcType=INTEGER}, #{gitRemoteAddress,jdbcType=VARCHAR},
+		tomcat_project_dir,
+		tomcat_port, driver_class_name,
+		url, username, password,
+		sql_at_git_repository_path, separator)
+		values (#{deployId,jdbcType=INTEGER},
+		#{gitRemoteAddress,jdbcType=VARCHAR},
 		#{localGitPath,jdbcType=VARCHAR},
 		#{projectAtGitRepositoryPath,jdbcType=VARCHAR},
 		#{branch,jdbcType=VARCHAR}, #{gitRemoteUsername,jdbcType=VARCHAR},
 		#{gitRemoteEmail,jdbcType=VARCHAR},
 		#{gitRemotePassword,jdbcType=VARCHAR}, #{backupDir,jdbcType=VARCHAR},
-		#{tomcatProjectDir,jdbcType=VARCHAR},
-		#{driverClassName,jdbcType=VARCHAR}, #{url,jdbcType=VARCHAR},
+		#{tomcatProjectDir,jdbcType=VARCHAR}, #{tomcatPort,jdbcType=INTEGER},
+		#{driverClassName,jdbcType=VARCHAR},
+		#{url,jdbcType=VARCHAR},
 		#{username,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR},
-		#{dataCorrectionDir,jdbcType=VARCHAR},
-		#{separator,jdbcType=VARCHAR})
+		#{sqlAtGitRepositoryPath,jdbcType=VARCHAR}, #{separator,jdbcType=VARCHAR})
 	</insert>
-	<insert id="insertSelective" parameterType="com.das.deploy.DeployConfig">
+	<insert id="insertSelective" parameterType="com.deploy.dao.DeployConfig">
 		insert into deploy_config
 		<trim prefix="(" suffix=")" suffixOverrides=",">
 			<if test="deployId != null">
@@ -99,6 +108,9 @@
 			<if test="tomcatProjectDir != null">
 				tomcat_project_dir,
 			</if>
+			<if test="tomcatPort != null">
+				tomcat_port,
+			</if>
 			<if test="driverClassName != null">
 				driver_class_name,
 			</if>
@@ -111,8 +123,8 @@
 			<if test="password != null">
 				password,
 			</if>
-			<if test="dataCorrectionDir != null">
-				data_correction_dir,
+			<if test="sqlAtGitRepositoryPath != null">
+				sql_at_git_repository_path,
 			</if>
 			<if test="separator != null">
 				separator,
@@ -149,6 +161,9 @@
 			<if test="tomcatProjectDir != null">
 				#{tomcatProjectDir,jdbcType=VARCHAR},
 			</if>
+			<if test="tomcatPort != null">
+				#{tomcatPort,jdbcType=INTEGER},
+			</if>
 			<if test="driverClassName != null">
 				#{driverClassName,jdbcType=VARCHAR},
 			</if>
@@ -161,19 +176,20 @@
 			<if test="password != null">
 				#{password,jdbcType=VARCHAR},
 			</if>
-			<if test="dataCorrectionDir != null">
-				#{dataCorrectionDir,jdbcType=VARCHAR},
+			<if test="sqlAtGitRepositoryPath != null">
+				#{sqlAtGitRepositoryPath,jdbcType=VARCHAR},
 			</if>
 			<if test="separator != null">
 				#{separator,jdbcType=VARCHAR},
 			</if>
 		</trim>
 	</insert>
-	<update id="updateByPrimaryKeySelective" parameterType="com.das.deploy.DeployConfig">
+	<update id="updateByPrimaryKeySelective" parameterType="com.deploy.dao.DeployConfig">
 		update deploy_config
 		<set>
 			<if test="gitRemoteAddress != null">
-				git_remote_address = #{gitRemoteAddress,jdbcType=VARCHAR},
+				git_remote_address =
+				#{gitRemoteAddress,jdbcType=VARCHAR},
 			</if>
 			<if test="localGitPath != null">
 				local_git_path = #{localGitPath,jdbcType=VARCHAR},
@@ -186,19 +202,25 @@
 				branch = #{branch,jdbcType=VARCHAR},
 			</if>
 			<if test="gitRemoteUsername != null">
-				git_remote_username = #{gitRemoteUsername,jdbcType=VARCHAR},
+				git_remote_username =
+				#{gitRemoteUsername,jdbcType=VARCHAR},
 			</if>
 			<if test="gitRemoteEmail != null">
 				git_remote_email = #{gitRemoteEmail,jdbcType=VARCHAR},
 			</if>
 			<if test="gitRemotePassword != null">
-				git_remote_password = #{gitRemotePassword,jdbcType=VARCHAR},
+				git_remote_password =
+				#{gitRemotePassword,jdbcType=VARCHAR},
 			</if>
 			<if test="backupDir != null">
 				backup_dir = #{backupDir,jdbcType=VARCHAR},
 			</if>
 			<if test="tomcatProjectDir != null">
-				tomcat_project_dir = #{tomcatProjectDir,jdbcType=VARCHAR},
+				tomcat_project_dir =
+				#{tomcatProjectDir,jdbcType=VARCHAR},
+			</if>
+			<if test="tomcatPort != null">
+				tomcat_port = #{tomcatPort,jdbcType=INTEGER},
 			</if>
 			<if test="driverClassName != null">
 				driver_class_name = #{driverClassName,jdbcType=VARCHAR},
@@ -212,8 +234,9 @@
 			<if test="password != null">
 				password = #{password,jdbcType=VARCHAR},
 			</if>
-			<if test="dataCorrectionDir != null">
-				data_correction_dir = #{dataCorrectionDir,jdbcType=VARCHAR},
+			<if test="sqlAtGitRepositoryPath != null">
+				sql_at_git_repository_path =
+				#{sqlAtGitRepositoryPath,jdbcType=VARCHAR},
 			</if>
 			<if test="separator != null">
 				separator = #{separator,jdbcType=VARCHAR},
@@ -221,24 +244,40 @@
 		</set>
 		where deploy_id = #{deployId,jdbcType=INTEGER}
 	</update>
-	<update id="updateByPrimaryKey" parameterType="com.das.deploy.DeployConfig">
-		update deploy_config
-		set git_remote_address = #{gitRemoteAddress,jdbcType=VARCHAR},
-		local_git_path = #{localGitPath,jdbcType=VARCHAR},
+	<update id="updateByPrimaryKey" parameterType="com.deploy.dao.DeployConfig">
+		update
+		deploy_config
+		set git_remote_address =
+		#{gitRemoteAddress,jdbcType=VARCHAR},
+		local_git_path =
+		#{localGitPath,jdbcType=VARCHAR},
 		project_at_git_repository_path =
 		#{projectAtGitRepositoryPath,jdbcType=VARCHAR},
-		branch = #{branch,jdbcType=VARCHAR},
-		git_remote_username = #{gitRemoteUsername,jdbcType=VARCHAR},
-		git_remote_email = #{gitRemoteEmail,jdbcType=VARCHAR},
-		git_remote_password = #{gitRemotePassword,jdbcType=VARCHAR},
-		backup_dir = #{backupDir,jdbcType=VARCHAR},
-		tomcat_project_dir = #{tomcatProjectDir,jdbcType=VARCHAR},
-		driver_class_name = #{driverClassName,jdbcType=VARCHAR},
+		branch =
+		#{branch,jdbcType=VARCHAR},
+		git_remote_username =
+		#{gitRemoteUsername,jdbcType=VARCHAR},
+		git_remote_email =
+		#{gitRemoteEmail,jdbcType=VARCHAR},
+		git_remote_password =
+		#{gitRemotePassword,jdbcType=VARCHAR},
+		backup_dir =
+		#{backupDir,jdbcType=VARCHAR},
+		tomcat_project_dir =
+		#{tomcatProjectDir,jdbcType=VARCHAR},
+		tomcat_port =
+		#{tomcatPort,jdbcType=INTEGER},
+		driver_class_name =
+		#{driverClassName,jdbcType=VARCHAR},
 		url = #{url,jdbcType=VARCHAR},
 		username = #{username,jdbcType=VARCHAR},
-		password = #{password,jdbcType=VARCHAR},
-		data_correction_dir = #{dataCorrectionDir,jdbcType=VARCHAR},
-		separator = #{separator,jdbcType=VARCHAR}
-		where deploy_id = #{deployId,jdbcType=INTEGER}
+		password =
+		#{password,jdbcType=VARCHAR},
+		sql_at_git_repository_path =
+		#{sqlAtGitRepositoryPath,jdbcType=VARCHAR},
+		separator =
+		#{separator,jdbcType=VARCHAR}
+		where deploy_id =
+		#{deployId,jdbcType=INTEGER}
 	</update>
 </mapper>

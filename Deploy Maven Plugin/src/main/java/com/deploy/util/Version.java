@@ -5,8 +5,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Target(value = { ElementType.ANNOTATION_TYPE, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = ElementType.TYPE)
 public @interface Version {
 	/**
 	 * 版本号
@@ -16,7 +16,7 @@ public @interface Version {
 	int versionNumber();
 
 	/**
-	 * 版本说明
+	 * 版本信息
 	 * 
 	 * @return
 	 */
