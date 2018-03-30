@@ -35,10 +35,6 @@ import com.deploy.mojo.DeployMojo;
 public class SqliteUtil {
 	public static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 	private static SqlSessionFactory ssf = null;
-	
-	public static void main(String[] args) throws IOException {
-		getSqlSessionFactory();
-	}
 
 	/**
 	 * 获取mybatis SqlSessionFactory
@@ -179,7 +175,8 @@ public class SqliteUtil {
 	 * @param checkInfo
 	 * @throws IOException
 	 */
-	public static void saveFileVersionCheckInfo(Integer deployId, Integer lastDeployId, Map<FileVersionInfo, String> checkInfo) throws IOException {
+	public static void saveFileVersionCheckInfo(Integer deployId, Integer lastDeployId,
+			Map<FileVersionInfo, String> checkInfo) throws IOException {
 		if (checkInfo != null && checkInfo.size() > 0) {
 			SqlSession sqlSession = getSqlSessionFactory().openSession();
 			FileCheckInfoMapper fcim = sqlSession.getMapper(FileCheckInfoMapper.class);
@@ -206,7 +203,8 @@ public class SqliteUtil {
 	 * @param diffInfo
 	 * @throws IOException
 	 */
-	public static void saveGitDiffInfo(Integer deployId, String commitId, String lastCommitId, Map<String, String> diffInfo) throws IOException {
+	public static void saveGitDiffInfo(Integer deployId, String commitId, String lastCommitId,
+			Map<String, String> diffInfo) throws IOException {
 		if (diffInfo != null && diffInfo.size() > 0) {
 			SqlSession sqlSession = getSqlSessionFactory().openSession();
 			GitDiffInfoMapper gdim = sqlSession.getMapper(GitDiffInfoMapper.class);
@@ -341,7 +339,7 @@ public class SqliteUtil {
 		sqlSession.commit();
 		sqlSession.close();
 	}
-	
+
 	/**
 	 * 通过文件名字模糊查询文件版本信息
 	 * 
@@ -349,14 +347,14 @@ public class SqliteUtil {
 	 * @return
 	 * @throws IOException
 	 */
-	public static FileVersionInfo findFileVersionInfoByFileName(Map<String,String> param) throws IOException{
+	public static FileVersionInfo findFileVersionInfoByFileName(Map<String, String> param) throws IOException {
 		SqlSession sqlSession = getSqlSessionFactory().openSession();
 		FileVersionInfoMapper fvim = sqlSession.getMapper(FileVersionInfoMapper.class);
 		FileVersionInfo fvi = fvim.selectByFileName(param);
 		sqlSession.close();
 		return fvi;
 	}
-	
+
 	/**
 	 * 插入文件版本信息
 	 * 
