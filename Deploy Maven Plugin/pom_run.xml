@@ -80,11 +80,11 @@
 					<!-- sql脚本中语句分割符,默认#END -->
 					<!-- <separator></separator> -->
 
-					<!-- ###### 注意:下列配置在使用hisDeploy插件时使用！！！ ###### -->
+					<!-- ###### 注意:下列配置在使用Deploy插件时使用！！！ ###### -->
 					<!-- 增量SQL脚本及数据execl在Git仓库中相对目录路径(在本地相对于本地仓库localGitPath路径),注意路径分隔符要使用"/",另外注释掉该配置表示不执行相关SQL脚本 -->
 					<!-- <sqlAtGitRepositoryPath></sqlAtGitRepositoryPath> -->
 
-					<!-- ###### 注意:下列配置在使用hisDBInit插件时使用！！！ ###### -->
+					<!-- ###### 注意:下列配置在使用DBInit插件时使用！！！ ###### -->
 					<!-- SQL脚本及数据execl存放目录,注意路径分隔符要使用"/",另外注释掉该配置表示不执行相关SQL脚本 -->
 					<!-- <dataDir>data</dataDir> -->
 				</configuration>
