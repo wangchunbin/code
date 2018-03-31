@@ -101,6 +101,7 @@ public class GitUtil {
 	 * @throws Exception
 	 */
 	public static void pull(Repository localRepository, String remoteBranchName, String userName, String passWord) throws Exception {
+		checkoutByBranchOrCommitID(localRepository, remoteBranchName);
 		Git git = new Git(localRepository);
 		UsernamePasswordCredentialsProvider user = new UsernamePasswordCredentialsProvider(userName, passWord);
 		git.pull().setRemoteBranchName(remoteBranchName).setCredentialsProvider(user).call();
@@ -177,7 +178,7 @@ public class GitUtil {
 	}
 	
 	/**
-	 * 迁出分支或版本
+	 * 切换分支或迁出版本
 	 * 
 	 * @param localRepository
 	 * @param branchOrCommitID
@@ -188,5 +189,6 @@ public class GitUtil {
 		CheckoutCommand checkoutCmd = git.checkout();
 		checkoutCmd.setName(branchOrCommitID);
 		checkoutCmd.call();
+		git.close();
 	}
 }

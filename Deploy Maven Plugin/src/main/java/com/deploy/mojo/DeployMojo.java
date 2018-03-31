@@ -280,7 +280,7 @@ public class DeployMojo extends AbstractMojo {
 		}
 		getLog().info("获取本地git仓库成功！");
 		String newCommitID = null;// 本次部署commitID
-		String commitMessage = null;// 最新提交备注 
+		String commitMessage = null;// 本次提交备注 
 		String newProjectVersion = null;// 本次pom.xml中项目版本号
 		try {
 			if(!StringUtil.isBlank(commitID)){
