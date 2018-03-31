@@ -56,7 +56,7 @@
 					<!-- 分支名称 -->
 					<branch>wangchunbin</branch>
 					<!-- git提交版本号，设置该参数可实现tomcat中项目版本回退，如果不设置该参数，则取分支最新的提交版本号；如果设置了该参数值，则拉取相应版本代码执行全量部署。 -->
-					<!-- <commitID></commitID> -->
+					<!-- <gitCommitID></gitCommitID> -->
 					<!-- gitLab或者gitHub 用户名 -->
 					<gitRemoteUserName>wangchunbin</gitRemoteUserName>
 					<!-- gitLab或者gitHub 注册邮箱 -->

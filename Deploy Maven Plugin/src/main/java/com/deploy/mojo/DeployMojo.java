@@ -59,7 +59,7 @@ public class DeployMojo extends AbstractMojo {
 	 * git提交版本号，设置该参数可实现tomcat中项目版本回退，如果不设置该参数，则取分支最新的提交版本号；如果设置了该参数值，则拉取相应版本代码执行全量部署。
 	 */
 	@Parameter
-	private String commitID;
+	private String gitCommitID;
 
 	/**
 	 * gitLab或者gitHub 用户名
@@ -137,7 +137,7 @@ public class DeployMojo extends AbstractMojo {
 	public String toString() {
 		return "[gitRemoteAddress=" + gitRemoteAddress + ", localGitPath=" + localGitPath
 				+ ", projectAtGitRepositoryPath=" + projectAtGitRepositoryPath + ", branch=" + branch
-				+ ", commitID=" + commitID + ", gitRemoteUserName=" + gitRemoteUserName + ", gitRemoteEmail=" + gitRemoteEmail
+				+ ", gitCommitID=" + gitCommitID + ", gitRemoteUserName=" + gitRemoteUserName + ", gitRemoteEmail=" + gitRemoteEmail
 				+ ", gitRemotePassWord=" + gitRemotePassWord + ", backupDir="
 				+ (backupDir == null ? null : backupDir.getPath()) + ", tomcatProjectDir="
 				+ (tomcatProjectDir == null ? null : tomcatProjectDir.getPath()) + ", tomcatPort="
@@ -209,7 +209,7 @@ public class DeployMojo extends AbstractMojo {
 			}
 			getLog().info("tomcat中项目部署ID:" + tomcatDeployId + ",Git分支:" + tomcatBranch + ",Git提交ID:" + tomcatGitCommitId + ",项目版本号:" + tomcatProjectVersion);
 		}
-		if(!StringUtil.isBlank(commitID)){
+		if(!StringUtil.isBlank(gitCommitID)){
 			isIncrementalDeployment = false;// 如果设置了commitID参数值，则拉取相应版本代码执行全量部署。实现版本回退功能。
 		}
 		getLog().info("准备执行" + (isIncrementalDeployment ? "增量部署！" : "全量部署！"));
@@ -270,9 +270,9 @@ public class DeployMojo extends AbstractMojo {
 				getLog().info("准备执行pull命令,拉取" + branch + "分支更新...");
 				GitUtil.pull(repository, branch, gitRemoteUserName, gitRemotePassWord); // 拉取分支更新
 			}
-			if(!StringUtil.isBlank(commitID)){
-				getLog().info("准备迁出" + branch + "分支" + commitID +"版本...");
-				GitUtil.checkoutByBranchOrCommitID(repository, commitID);
+			if(!StringUtil.isBlank(gitCommitID)){
+				getLog().info("准备迁出" + branch + "分支" + gitCommitID +"版本...");
+				GitUtil.checkoutByBranchOrCommitID(repository, gitCommitID);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -283,8 +283,8 @@ public class DeployMojo extends AbstractMojo {
 		String commitMessage = null;// 本次提交备注 
 		String newProjectVersion = null;// 本次pom.xml中项目版本号
 		try {
-			if(!StringUtil.isBlank(commitID)){
-				newCommitID = commitID;
+			if(!StringUtil.isBlank(gitCommitID)){
+				newCommitID = gitCommitID;
 			}else{
 				newCommitID = GitUtil.getLastCommitID(repository);
 			}
@@ -517,7 +517,7 @@ public class DeployMojo extends AbstractMojo {
 		deploy.setLocalGitPath("C:/Users/wangchunbin/Desktop/test");
 		deploy.setProjectAtGitRepositoryPath("DasHealthCare/javahis5");
 		deploy.setBranch("wangchunbin");
-		//deploy.setCommitID("");
+		//deploy.setGitCommitID("");
 		deploy.setGitRemoteUserName("wangchunbin");
 		deploy.setGitRemoteEmail("474103319@qq.com");
 		deploy.setGitRemotePassWord("11111111");
@@ -559,12 +559,12 @@ public class DeployMojo extends AbstractMojo {
 		this.branch = branch;
 	}
 
-	public String getCommitID() {
-		return commitID;
+	public String getGitCommitID() {
+		return gitCommitID;
 	}
 
-	public void setCommitID(String commitID) {
-		this.commitID = commitID;
+	public void setGitCommitID(String gitCommitID) {
+		this.gitCommitID = gitCommitID;
 	}
 
 	public String getGitRemoteUserName() {

@@ -10,6 +10,8 @@ public class DeployConfig {
     private String projectAtGitRepositoryPath;
 
     private String branch;
+    
+    private String gitCommitId;
 
     private String gitRemoteUsername;
 
@@ -75,7 +77,15 @@ public class DeployConfig {
         this.branch = branch == null ? null : branch.trim();
     }
 
-    public String getGitRemoteUsername() {
+    public String getGitCommitId() {
+		return gitCommitId;
+	}
+
+	public void setGitCommitId(String gitCommitId) {
+		this.gitCommitId = gitCommitId;
+	}
+
+	public String getGitRemoteUsername() {
         return gitRemoteUsername;
     }
 

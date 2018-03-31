@@ -10,6 +10,7 @@
 		<result column="project_at_git_repository_path" property="projectAtGitRepositoryPath"
 			jdbcType="VARCHAR" />
 		<result column="branch" property="branch" jdbcType="VARCHAR" />
+		<result column="git_commit_id" property="gitCommitId" jdbcType="VARCHAR" />
 		<result column="git_remote_username" property="gitRemoteUsername"
 			jdbcType="VARCHAR" />
 		<result column="git_remote_email" property="gitRemoteEmail"
@@ -32,11 +33,12 @@
 	<sql id="Base_Column_List">
 		deploy_id, git_remote_address, local_git_path,
 		project_at_git_repository_path,
-		branch,
+		branch, git_commit_id,
 		git_remote_username,
 		git_remote_email, git_remote_password, backup_dir,
 		tomcat_project_dir,
-		tomcat_port, driver_class_name, url, username, password,
+		tomcat_port, driver_class_name, url, username,
+		password,
 		sql_at_git_repository_path,
 		separator
 	</sql>
@@ -56,24 +58,29 @@
 		insert into deploy_config
 		(deploy_id, git_remote_address,
 		local_git_path,
-		project_at_git_repository_path, branch, git_remote_username,
+		project_at_git_repository_path, branch, git_commit_id,
+		git_remote_username,
 		git_remote_email, git_remote_password, backup_dir,
 		tomcat_project_dir,
 		tomcat_port, driver_class_name,
-		url, username, password,
+		url, username,
+		password,
 		sql_at_git_repository_path, separator)
-		values (#{deployId,jdbcType=INTEGER},
+		values
+		(#{deployId,jdbcType=INTEGER},
 		#{gitRemoteAddress,jdbcType=VARCHAR},
 		#{localGitPath,jdbcType=VARCHAR},
 		#{projectAtGitRepositoryPath,jdbcType=VARCHAR},
-		#{branch,jdbcType=VARCHAR}, #{gitRemoteUsername,jdbcType=VARCHAR},
+		#{branch,jdbcType=VARCHAR}, #{gitCommitId,jdbcType=VARCHAR},
+		#{gitRemoteUsername,jdbcType=VARCHAR},
 		#{gitRemoteEmail,jdbcType=VARCHAR},
 		#{gitRemotePassword,jdbcType=VARCHAR}, #{backupDir,jdbcType=VARCHAR},
 		#{tomcatProjectDir,jdbcType=VARCHAR}, #{tomcatPort,jdbcType=INTEGER},
 		#{driverClassName,jdbcType=VARCHAR},
 		#{url,jdbcType=VARCHAR},
 		#{username,jdbcType=VARCHAR}, #{password,jdbcType=VARCHAR},
-		#{sqlAtGitRepositoryPath,jdbcType=VARCHAR}, #{separator,jdbcType=VARCHAR})
+		#{sqlAtGitRepositoryPath,jdbcType=VARCHAR},
+		#{separator,jdbcType=VARCHAR})
 	</insert>
 	<insert id="insertSelective" parameterType="com.deploy.dao.DeployConfig">
 		insert into deploy_config
@@ -92,6 +99,9 @@
 			</if>
 			<if test="branch != null">
 				branch,
+			</if>
+			<if test="gitCommitId != null">
+				git_commit_id,
 			</if>
 			<if test="gitRemoteUsername != null">
 				git_remote_username,
@@ -145,6 +155,9 @@
 			</if>
 			<if test="branch != null">
 				#{branch,jdbcType=VARCHAR},
+			</if>
+			<if test="gitCommitId != null">
+				#{gitCommitId,jdbcType=VARCHAR},
 			</if>
 			<if test="gitRemoteUsername != null">
 				#{gitRemoteUsername,jdbcType=VARCHAR},
@@ -201,6 +214,9 @@
 			<if test="branch != null">
 				branch = #{branch,jdbcType=VARCHAR},
 			</if>
+			<if test="gitCommitId != null">
+				git_commit_id = #{gitCommitId,jdbcType=VARCHAR},
+			</if>
 			<if test="gitRemoteUsername != null">
 				git_remote_username =
 				#{gitRemoteUsername,jdbcType=VARCHAR},
@@ -255,6 +271,8 @@
 		#{projectAtGitRepositoryPath,jdbcType=VARCHAR},
 		branch =
 		#{branch,jdbcType=VARCHAR},
+		git_commit_id =
+		#{gitCommitId,jdbcType=VARCHAR},
 		git_remote_username =
 		#{gitRemoteUsername,jdbcType=VARCHAR},
 		git_remote_email =

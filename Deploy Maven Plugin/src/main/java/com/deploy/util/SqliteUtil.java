@@ -64,10 +64,11 @@ public class SqliteUtil {
 		CommonParam commonParam = new CommonParam();
 		String sql = "CREATE TABLE deploy_config (" + "deploy_id  INTEGER NOT NULL," + "git_remote_address  TEXT(100),"
 				+ "local_git_path  TEXT(100)," + "project_at_git_repository_path  TEXT(100)," + "branch  TEXT(100),"
-				+ "git_remote_username  TEXT(100)," + "git_remote_email  TEXT(100)," + "git_remote_password  TEXT(100),"
-				+ "backup_dir  TEXT(100)," + "tomcat_project_dir  TEXT(100)," + "tomcat_port  INTEGER,"
-				+ "driver_class_name  TEXT(100)," + "url  TEXT(100)," + "username  TEXT(100)," + "password  TEXT(100),"
-				+ "sql_at_git_repository_path  TEXT(100)," + "separator  TEXT(100)," + "PRIMARY KEY (deploy_id)" + ")";
+				+ "git_commit_id  TEXT(100)," + "git_remote_username  TEXT(100)," + "git_remote_email  TEXT(100),"
+				+ "git_remote_password  TEXT(100)," + "backup_dir  TEXT(100)," + "tomcat_project_dir  TEXT(100),"
+				+ "tomcat_port  INTEGER," + "driver_class_name  TEXT(100)," + "url  TEXT(100)," + "username  TEXT(100),"
+				+ "password  TEXT(100)," + "sql_at_git_repository_path  TEXT(100)," + "separator  TEXT(100),"
+				+ "PRIMARY KEY (deploy_id)" + ")";
 		commonParam.setSql(sql);
 		cm.executeUpdateSql(commonParam);
 		sqlSession.commit();
@@ -147,6 +148,7 @@ public class SqliteUtil {
 		DeployConfig dc = new DeployConfig();
 		dc.setBackupDir(dm.getBackupDir().getPath());
 		dc.setBranch(dm.getBranch());
+		dc.setGitCommitId(dm.getGitCommitID());
 		dc.setSqlAtGitRepositoryPath(dm.getSqlAtGitRepositoryPath());
 		dc.setDeployId(deployId);
 		dc.setDriverClassName(dm.getDriverClassName());
