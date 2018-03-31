@@ -8,5 +8,5 @@
  3.第三步，选中项目右键执行"mvn com.deploy:deploy-maven-plugin:1.0:DBInit"命令，运行插件.
 
 二、程序全量/增量部署插件:
-       类似Jenkins，结合git、gitlab或者github、maven、tomcat、jdk环境，实现web程序全量及增量部署。
-       相关配置请见pom_run.xml,执行"mvn com.deploy:deploy-maven-plugin:1.0:Deploy"命令运行。
+ 1.类似Jenkins，结合git、gitlab或者github、maven、tomcat、jdk环境，实现web程序全量及增量部署。
+ 2.相关配置请见pom_run.xml,执行"mvn com.deploy:deploy-maven-plugin:1.0:Deploy"命令运行。
