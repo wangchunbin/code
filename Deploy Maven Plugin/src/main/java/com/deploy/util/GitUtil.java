@@ -101,7 +101,11 @@ public class GitUtil {
 	 * @throws Exception
 	 */
 	public static void pull(Repository localRepository, String remoteBranchName, String userName, String passWord) throws Exception {
-		checkoutByBranchOrCommitID(localRepository, remoteBranchName);
+		try{
+			checkoutByBranchOrCommitID(localRepository, remoteBranchName);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 		Git git = new Git(localRepository);
 		UsernamePasswordCredentialsProvider user = new UsernamePasswordCredentialsProvider(userName, passWord);
 		git.pull().setRemoteBranchName(remoteBranchName).setCredentialsProvider(user).call();
@@ -142,7 +146,6 @@ public class GitUtil {
 		String message = null;
 		while (iterator.hasNext()) {
 			RevCommit rc = iterator.next();
-			System.out.println(rc.getId());
 			message = rc.getShortMessage();
 			break;
 		}
