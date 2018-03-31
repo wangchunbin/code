@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.diff.DiffEntry;
@@ -140,6 +141,7 @@ public class GitUtil {
 		String message = null;
 		while (iterator.hasNext()) {
 			RevCommit rc = iterator.next();
+			System.out.println(rc.getId());
 			message = rc.getShortMessage();
 			break;
 		}
@@ -172,5 +174,19 @@ public class GitUtil {
 		}
 		git.close();
 		return map;
+	}
+	
+	/**
+	 * 迁出分支或版本
+	 * 
+	 * @param localRepository
+	 * @param branchOrCommitID
+	 * @throws Exception 
+	 */
+	public static void checkoutByBranchOrCommitID(Repository localRepository, String branchOrCommitID) throws Exception{
+		Git git = new Git(localRepository);
+		CheckoutCommand checkoutCmd = git.checkout();
+		checkoutCmd.setName(branchOrCommitID);
+		checkoutCmd.call();
 	}
 }
