@@ -32,7 +32,7 @@ public class TomcatUtil {
 		if (!isRunning) {
 			Runtime runtime = Runtime.getRuntime();
 			Process process = runtime.exec("cmd /c startup.bat", null, new File(tomcatDir.getPath() + "/bin"));
-			if (process.waitFor() > -2) {
+			if (process.waitFor() > -1) {
 				System.out.println("tomcat启动完成！");
 			}
 		}
