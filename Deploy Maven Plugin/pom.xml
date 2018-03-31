@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.deploy</groupId>
 	<artifactId>deploy-maven-plugin</artifactId>
-	<version>1.0</version>
+	<version>1.5</version>
 	<packaging>maven-plugin</packaging>
 	<name>Deploy Maven Plugin</name>
 	<url>http://maven.apache.org</url>

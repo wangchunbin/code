@@ -5,8 +5,8 @@
         另外注意文件内容规则：
    1)sql文件中的SQL语句使用#END结尾,因为插件是使用#来切割出文件中每条SQL，注意Java JDBC执行的insert、create table语句结尾没有分号,但存储过程、触发器有;
    2)execl文件中每个sheet第一行第一个单元格填写要插入数据的表名， 第二行填写表列名，要插入表多少列就填写多少个单元格。 第三行开始填写要插入的数据，注意要设置好单元格格式，第一行和第二行为文本格式，第三行开始每列根据数据类型设置单元格格式，否则插入的数据有问题;	       
- 3.第三步，选中项目右键执行"mvn com.deploy:deploy-maven-plugin:1.0:DBInit"命令，运行插件.
+ 3.第三步，选中项目右键执行"mvn com.deploy:deploy-maven-plugin:1.5:DBInit"命令，运行插件.
 
 二、程序全量/增量部署插件:
  1.类似Jenkins，结合git、gitlab或者github、maven、tomcat、jdk环境，实现web程序全量及增量部署。
- 2.相关配置请见pom_run.xml,执行"mvn com.deploy:deploy-maven-plugin:1.0:Deploy"命令运行。
+ 2.相关配置请见pom_run.xml,执行"mvn com.deploy:deploy-maven-plugin:1.5:Deploy"命令运行。
