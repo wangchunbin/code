@@ -551,7 +551,7 @@ public class VersionUtil {
 	 */
 	public static void saveIncrementalTomcatFileVersionInfo(Integer deployId, File tomcatProjectDir, Map<FileVersionInfo, String> checkInfo, String projectAtGitRepositoryPath, Map<String, String> diffInfo) throws Exception {
 		File projectVersionFile = new File(tomcatProjectDir.getPath() + "/" +"version.txt");
-		if(projectVersionFile != null && projectVersionFile.exists()){//更新项目版本信息
+		if(projectVersionFile != null && projectVersionFile.exists()){//更新项目版本文件版本信息
 			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		 	Calendar cal = Calendar.getInstance();
 			FileVersionInfo fvi = new FileVersionInfo();
