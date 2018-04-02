@@ -550,6 +550,22 @@ public class VersionUtil {
 	 * @throws Exception
 	 */
 	public static void saveIncrementalTomcatFileVersionInfo(Integer deployId, File tomcatProjectDir, Map<FileVersionInfo, String> checkInfo, String projectAtGitRepositoryPath, Map<String, String> diffInfo) throws Exception {
+		File projectVersionFile = new File(tomcatProjectDir.getPath() + "/" +"version.txt");
+		if(projectVersionFile != null && projectVersionFile.exists()){//更新项目版本信息
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		 	Calendar cal = Calendar.getInstance();
+			FileVersionInfo fvi = new FileVersionInfo();
+			fvi.setFile(file.getPath());
+			fvi.setFileSize(Long.valueOf(file.length()).intValue());
+			cal.setTimeInMillis(file.lastModified());
+			fvi.setLastModifyTime(sdf.format(cal.getTime()));
+			// 1.备份
+			FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(fvi.getFile());
+			SqliteUtil.insertFileVersionModifyBak(oldFvi);
+			// 2.更新
+			fvi.setDeployId(deployId);
+			SqliteUtil.updateFileVersionInfo(fvi);
+		}
 		if (checkInfo != null && checkInfo.size() > 0) {
 			for (Entry<FileVersionInfo, String> entry : checkInfo.entrySet()) {
 				FileVersionInfo newFvi = entry.getKey();
