@@ -465,7 +465,7 @@ public class VersionUtil {
 		FileUtil.listFiles(tomcatProjectDir, fileList);
 		if (fileList != null && fileList.size() > 0) {
 			List<FileVersionInfo> vector = new Vector<FileVersionInfo>();
-			int threadCount = 4;
+			int threadCount = 8;
 			int size = fileList.size();
 			threadCount = Math.min(threadCount, size);
 			int fileCount = size / threadCount;
@@ -597,7 +597,9 @@ public class VersionUtil {
 						FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(tomcatFile.getPath());
 						SqliteUtil.insertFileVersionModifyBak(oldFvi);
 						// 2.删除
-						SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
+						if(oldFvi != null){
+							SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
+						}
 					}
 				}
 				if (filePath.contains("/src")) {
@@ -635,7 +637,9 @@ public class VersionUtil {
 						FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(tomcatFile.getPath());
 						SqliteUtil.insertFileVersionModifyBak(oldFvi);
 						// 2.删除
-						SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
+						if(oldFvi != null){
+							SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
+						}
 					}
 				}
 			}
