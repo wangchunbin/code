@@ -234,7 +234,7 @@ public class VersionUtil {
 	 * @throws Exception
 	 */
 	public static void writeVersion(File sourceFile, Integer versionNumber, String information) throws Exception {
-		if (sourceFile == null && sourceFile.exists()){
+		if (sourceFile != null && sourceFile.exists()){
 			if (versionNumber == null || information == null) {// 判空
 				throw new Exception("传入的版本信息不能为null！");
 			}
