@@ -234,68 +234,70 @@ public class VersionUtil {
 	 * @throws Exception
 	 */
 	public static void writeVersion(File sourceFile, Integer versionNumber, String information) throws Exception {
-		if (sourceFile == null || versionNumber == null || information == null) {// 判空
-			throw new Exception("传入的参数不能为null！");
-		}
-		FileInputStream fis = new FileInputStream(sourceFile);
-		BufferedReader br = new BufferedReader(new InputStreamReader(fis, "GBK"));
-		StringBuffer sb = new StringBuffer();
-		String line = null;
-		String suffix = sourceFile.getName().substring(sourceFile.getName().lastIndexOf(".") + 1);
-		if ("java".equals(suffix)) {// 写入Version Annotation
-			String javaName = sourceFile.getName().substring(0, sourceFile.getName().indexOf(".java"));
-			int lineCount = 0;
-			while ((line = br.readLine()) != null) {
-				if (line.matches("^\\s*public\\s+class\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+class\\s+", "@com.das.version.Version(versionNumber="
-							+ versionNumber + ",information=\"" + information + "\")\r\npublic class ");
-				}
-				if (line.matches("^\\s*class\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*class\\s+", "@com.das.version.Version(versionNumber=" + versionNumber
-							+ ",information=\"" + information + "\")\r\nclass ");
-				}
-				if (line.matches("^\\s*public\\s+abstract\\s+class\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+abstract\\s+class\\s+",
-							"@com.das.version.Version(versionNumber=" + versionNumber + ",information=\"" + information
-									+ "\")\r\npublic abstract class ");
-				}
-				if (line.matches("^\\s*public\\s+final\\s+class\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+final\\s+class\\s+",
-							"@com.das.version.Version(versionNumber=" + versionNumber + ",information=\"" + information
-									+ "\")\r\npublic final class ");
-				}
-				if (line.matches("^\\s*public\\s+interface\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+interface\\s+", "@com.das.version.Version(versionNumber="
-							+ versionNumber + ",information=\"" + information + "\")\r\npublic interface ");
-				}
-				if (line.matches("^\\s*public\\s+@interface\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+@interface\\s+", "@com.das.version.Version(versionNumber="
-							+ versionNumber + ",information=\"" + information + "\")\r\npublic @interface ");
-				}
-				if (lineCount > 0) {
-					line = "\r\n" + line;
-				}
-				sb.append(line);
-				lineCount++;
+		if (sourceFile == null && sourceFile.exists()){
+			if (versionNumber == null || information == null) {// 判空
+				throw new Exception("传入的版本信息不能为null！");
 			}
-		} else if ("x".equals(suffix)) {// 写入版本信息行
-			sb.append("#versionNumber=" + versionNumber + "\r\n");
-			sb.append("#information=" + information.replace("\r\n", " "));
-			while ((line = br.readLine()) != null) {
-				sb.append("\r\n" + line);
+			FileInputStream fis = new FileInputStream(sourceFile);
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis, "GBK"));
+			StringBuffer sb = new StringBuffer();
+			String line = null;
+			String suffix = sourceFile.getName().substring(sourceFile.getName().lastIndexOf(".") + 1);
+			if ("java".equals(suffix)) {// 写入Version Annotation
+				String javaName = sourceFile.getName().substring(0, sourceFile.getName().indexOf(".java"));
+				int lineCount = 0;
+				while ((line = br.readLine()) != null) {
+					if (line.matches("^\\s*public\\s+class\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+class\\s+", "@com.das.version.Version(versionNumber="
+								+ versionNumber + ",information=\"" + information + "\")\r\npublic class ");
+					}
+					if (line.matches("^\\s*class\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*class\\s+", "@com.das.version.Version(versionNumber=" + versionNumber
+								+ ",information=\"" + information + "\")\r\nclass ");
+					}
+					if (line.matches("^\\s*public\\s+abstract\\s+class\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+abstract\\s+class\\s+",
+								"@com.das.version.Version(versionNumber=" + versionNumber + ",information=\"" + information
+										+ "\")\r\npublic abstract class ");
+					}
+					if (line.matches("^\\s*public\\s+final\\s+class\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+final\\s+class\\s+",
+								"@com.das.version.Version(versionNumber=" + versionNumber + ",information=\"" + information
+										+ "\")\r\npublic final class ");
+					}
+					if (line.matches("^\\s*public\\s+interface\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+interface\\s+", "@com.das.version.Version(versionNumber="
+								+ versionNumber + ",information=\"" + information + "\")\r\npublic interface ");
+					}
+					if (line.matches("^\\s*public\\s+@interface\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+@interface\\s+", "@com.das.version.Version(versionNumber="
+								+ versionNumber + ",information=\"" + information + "\")\r\npublic @interface ");
+					}
+					if (lineCount > 0) {
+						line = "\r\n" + line;
+					}
+					sb.append(line);
+					lineCount++;
+				}
+			} else if ("x".equals(suffix)) {// 写入版本信息行
+				sb.append("#versionNumber=" + versionNumber + "\r\n");
+				sb.append("#information=" + information.replace("\r\n", " "));
+				while ((line = br.readLine()) != null) {
+					sb.append("\r\n" + line);
+				}
 			}
+			br.close();
+			fis.close();
+			String content = sb.toString();
+			/*File dir=sourceFile.getParentFile();
+			if(!dir.exists()){
+				dir.mkdirs();
+			}*/
+			FileOutputStream fos = new FileOutputStream(sourceFile);
+			fos.write(content.getBytes("GBK"));
+			fos.flush();
+			fos.close();
 		}
-		br.close();
-		fis.close();
-		String content = sb.toString();
-		File dir=sourceFile.getParentFile();
-		if(!dir.exists()){
-			dir.mkdirs();
-		}
-		FileOutputStream fos = new FileOutputStream(sourceFile);
-		fos.write(content.getBytes("GBK"));
-		fos.flush();
-		fos.close();
 	}
 
     /**
