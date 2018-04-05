@@ -7,7 +7,7 @@ public class FileVersionModifyBak {
 
     private Integer deployId;
 
-    private Integer versionNumber;
+    private String versionNumber;
 
     private String infomation;
 
@@ -39,11 +39,11 @@ public class FileVersionModifyBak {
         this.deployId = deployId;
     }
 
-    public Integer getVersionNumber() {
+    public String getVersionNumber() {
         return versionNumber;
     }
 
-    public void setVersionNumber(Integer versionNumber) {
+    public void setVersionNumber(String versionNumber) {
         this.versionNumber = versionNumber;
     }
 

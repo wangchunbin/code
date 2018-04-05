@@ -209,9 +209,6 @@ public class DeployMojo extends AbstractMojo {
 			}
 			getLog().info("tomcat中项目部署ID:" + tomcatDeployId + ",Git分支:" + tomcatBranch + ",Git提交ID:" + tomcatGitCommitId + ",项目版本号:" + tomcatProjectVersion);
 		}
-		if(!StringUtil.isBlank(gitCommitID)){
-			isIncrementalDeployment = false;// 如果设置了commitID参数值，则拉取相应版本代码执行全量部署。实现版本回退功能。
-		}
 		getLog().info("准备执行" + (isIncrementalDeployment ? "增量部署！" : "全量部署！"));
 		getLog().info("正在创建数据库部署主表信息...");
 		DeployMain deployMain = null;
@@ -268,7 +265,7 @@ public class DeployMojo extends AbstractMojo {
 				}
 			} else {
 				getLog().info("准备执行pull命令,拉取" + branch + "分支更新...");
-				GitUtil.pull(repository, branch, gitRemoteUserName, gitRemotePassWord); // 拉取分支更新
+				GitUtil.pullByCmd(localGitPath, branch);// 拉取分支更新
 			}
 			if(!StringUtil.isBlank(gitCommitID)){
 				getLog().info("准备迁出" + branch + "分支" + gitCommitID +"版本...");
@@ -279,22 +276,22 @@ public class DeployMojo extends AbstractMojo {
 			throw new MojoFailureException("获取本地git仓库失败！");
 		}
 		getLog().info("获取本地git仓库成功！");
-		String newCommitID = null;// 本次部署commitID
-		String commitMessage = null;// 本次提交备注 
-		String newProjectVersion = null;// 本次pom.xml中项目版本号
+		String newCommitID = null;// 最新commitID
+		Map<String, String> gitCommitFileVersionInfo = null;// git提交文件版本信息 
+		String newProjectVersion = null;// pom.xml中项目版本号
 		try {
 			if(!StringUtil.isBlank(gitCommitID)){
 				newCommitID = gitCommitID;
 			}else{
 				newCommitID = GitUtil.getLastCommitID(repository);
 			}
-			commitMessage = GitUtil.getLastCommitMessage(repository);
+			gitCommitFileVersionInfo = GitUtil.getGitCommitFileVersionInfo(repository);
 			newProjectVersion = VersionUtil.getProjectVersionByPOM(new File(localGitPath + "/" + projectAtGitRepositoryPath + "/pom.xml"));
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new MojoFailureException("获取" + branch + "分支最新CommitID及Commit备注或pom文件中项目版本号失败！");
 		}
-		getLog().info(branch + "分支最新CommitID:" + newCommitID + ",Commit备注:" + commitMessage + ",pom文件中项目版本号:" + newProjectVersion);
+		getLog().info(branch + "分支最新CommitID:" + newCommitID + ",pom文件中项目版本号:" + newProjectVersion);
 		try {
 			deployMain.setBranch(branch);
 			deployMain.setGitCommitId(newCommitID);
@@ -329,9 +326,9 @@ public class DeployMojo extends AbstractMojo {
 			sourceDir.mkdirs();
 			FileUtil.copyDirContentToDir(new File(localGitPath + "/" + projectAtGitRepositoryPath), sourceDir);// 源码复制
 			if (isIncrementalDeployment) {
-				VersionUtil.incrementalWriteVersion(sourceDir, tomcatProjectDir.getName(), commitMessage, diffInfo); // 写入增量版本信息
+				VersionUtil.incrementalWriteVersion(sourceDir, tomcatProjectDir.getName(), newProjectVersion, gitCommitFileVersionInfo, diffInfo); // 写入增量版本信息
 			} else {
-				VersionUtil.batchWriteInitVersion(sourceDir);// 写入全量版本信息
+				VersionUtil.batchWriteInitVersion(sourceDir,newProjectVersion);// 写入全量版本信息
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -341,7 +338,6 @@ public class DeployMojo extends AbstractMojo {
 		getLog().info("正在执行maven命令，编译打包项目代码...");
 		Map<String, String> result = null;
 		try {
-			//CmdUtil.execCMD(sourceDir.getPath(), "mvn clean");
 			result = CmdUtil.execCMD(sourceDir.getPath(), "mvn package -Dmaven.test.skip=true");// 执行maven打包命令
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -377,9 +373,6 @@ public class DeployMojo extends AbstractMojo {
 		}
 		getLog().info("执行备份目录下创建相关目录并解压war包操作成功！");
 		if (isIncrementalDeployment) {
-			// 对应关系
-			// DasHealthCare\javahis5\WebContent --> apache-tomcat-8.5.24\webapps\javahis5
-			// DasHealthCare\javahis5\src --> apache-tomcat-8.5.24\webapps\javahis5\WEB-INF\classes
 			getLog().info("开始执行增量部署...");
 			try {
 				if (diffInfo.size() > 0) {
@@ -404,6 +397,9 @@ public class DeployMojo extends AbstractMojo {
 								File newFile = new File(tempDir.getPath() + "/" + file);
 								FileUtil.replaceFile(newFile, tomcatFile);
 								// 3.将文件放入到增量目录
+								if(newFile.getPath().contains("WEB-INF/config/system")){// 过滤掉system目录下文件，不写入增量包
+									continue;
+								}
 								File incrementalDir = new File(backupDir.getPath() + "/" + stamp + "/incremental/" + tomcateFilePackagePath);
 								incrementalDir.mkdirs();
 								FileUtil.copyFileToDir(newFile, incrementalDir);
@@ -427,14 +423,39 @@ public class DeployMojo extends AbstractMojo {
 								File newFile = new File(tempDir.getPath() + "/WEB-INF/classes/" + file);
 								FileUtil.replaceFile(newFile, tomcatFile);
 								// 3.将文件放入到增量目录
-								File incrementalDir = new File(backupDir + "/" + stamp + "/incremental/" + tomcateFilePackagePath);
+								File incrementalDir = new File(backupDir + "/" + stamp + "/incremental/code/" + tomcateFilePackagePath);
 								incrementalDir.mkdirs();
 								FileUtil.copyFileToDir(newFile, incrementalDir);
 							}
 						}
 					}
+					Map<File, String> jarDiffInfo = FileUtil.diffLibJar(new File(tempDir.getPath()+"/WEB-INF/lib"), new File(tomcatProjectDir+"/WEB-INF/lib"));
+					if(jarDiffInfo !=null && jarDiffInfo.size() > 0){
+						for(Entry<File,String> entry : jarDiffInfo.entrySet()){
+							if(!entry.getValue().contains("ADD")){// 1.备份
+								String fileBackupDirPath = tomcatBackupDir.getPath() + "/WEB-INF/lib";
+								File fileBackupDir = new File(fileBackupDirPath);
+								fileBackupDir.mkdirs();
+								if(entry.getValue().contains("DELETE")){// 删除备份
+									FileUtil.copyFileToDir(entry.getKey(), fileBackupDir);
+								}else{// 修改备份
+									FileUtil.copyFileToDir(new File(tomcatProjectDir+ "/WEB-INF/lib/" +entry.getKey().getName()), fileBackupDir);
+								}
+							}
+							// 2.替换或删除文件
+							if(entry.getValue().contains("DELETE")){
+								FileUtil.deleteDirOrFile(entry.getKey().getPath());
+							}else{
+								FileUtil.replaceFile(entry.getKey(), new File(tomcatProjectDir+ "/WEB-INF/lib/" +entry.getKey().getName()));
+								// 3.将文件放入到增量目录
+								File incrementalDir = new File(backupDir + "/" + stamp + "/incremental/code/WEB-INF/lib");
+								incrementalDir.mkdirs();
+								FileUtil.copyFileToDir(entry.getKey(), incrementalDir);
+							}
+						}
+					}
 					String incrementalFilePath = backupDir.getPath() + "/" + stamp + "/incremental/incremental.xls";// 生成增量文件清单
-					ExcelUtil.saveIncrementalInfo(incrementalFilePath, projectAtGitRepositoryPath, commitMessage, diffInfo);
+					ExcelUtil.saveIncrementalInfo(incrementalFilePath, projectAtGitRepositoryPath, gitCommitFileVersionInfo, diffInfo, jarDiffInfo);
 				} else {
 					getLog().info("版本无差异！");
 				}
@@ -466,11 +487,11 @@ public class DeployMojo extends AbstractMojo {
 		}
 		if(!StringUtil.isBlank(sqlAtGitRepositoryPath)){
 			File dataCorrectionDir = new File(localGitPath+"/"+sqlAtGitRepositoryPath);
-			if (!FileUtil.isNullDir(dataCorrectionDir)&& !StringUtil.isBlank(driverClassName)
+			if (!FileUtil.isNullDir(dataCorrectionDir) && !StringUtil.isBlank(driverClassName)
 					&& !StringUtil.isBlank(url) && !StringUtil.isBlank(username) && !StringUtil.isBlank(password)) {
 				getLog().info("正在执行数据修正操作...");
 				try {
-					File sqlBakDir=new File(backupDir.getPath() + "/" + stamp + "/incremental/sql");
+					File sqlBakDir=new File(backupDir.getPath() + "/" + stamp + "/incremental/sql/" + dataCorrectionDir.getName());
 					sqlBakDir.mkdirs();
 					FileUtil.copyDirContentToDir(dataCorrectionDir, sqlBakDir);// 备份增量脚本
 					DBInitMojo mojo = new DBInitMojo();
@@ -490,11 +511,19 @@ public class DeployMojo extends AbstractMojo {
 		}
 		try {
 			deployMain.setDeployEndTime(SqliteUtil.sdf.format(new Date()));
-			deployMain.setIsSuccess("成功！");
+			deployMain.setIsSuccess(isIncrementalDeployment ? "执行增量部署成功！" : "执行全量部署成功！");
 			SqliteUtil.updateDeployMain(deployMain); // 将成功信息写入部署主表
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new MojoFailureException("更新部署主表信息失败！");
+		}
+		try{
+			getLog().info("正在清理临时文件...");
+			FileUtil.deleteDirOrFile(sourceDir.getParentFile().getPath());
+			FileUtil.deleteDirOrFile(tempDir.getPath());
+		}catch(Exception e){
+			e.printStackTrace();
+			throw new MojoFailureException("清理临时文件失败！");
 		}
 		try {
 			getLog().info("正在启动Tomcat...");
@@ -514,10 +543,10 @@ public class DeployMojo extends AbstractMojo {
 	public static void main(String[] args) throws Exception {
 		DeployMojo deploy = new DeployMojo();
 		deploy.setGitRemoteAddress("http://192.168.123.199:10080/root/DASHISCODE.git");
-		deploy.setLocalGitPath("C:/Users/wangchunbin/Desktop/test");
+		deploy.setLocalGitPath("C:/Users/wangchunbin/Desktop/code");
 		deploy.setProjectAtGitRepositoryPath("DasHealthCare/javahis5");
-		deploy.setBranch("wangchunbin");
-		//deploy.setGitCommitID("");
+		//deploy.setGitCommitID("d832a5621c7a1ea6e8990163ad5d4aef5278d753");
+		deploy.setBranch("QRCODE_MASTER");
 		deploy.setGitRemoteUserName("wangchunbin");
 		deploy.setGitRemoteEmail("474103319@qq.com");
 		deploy.setGitRemotePassWord("11111111");
@@ -558,7 +587,7 @@ public class DeployMojo extends AbstractMojo {
 	public void setBranch(String branch) {
 		this.branch = branch;
 	}
-
+	
 	public String getGitCommitID() {
 		return gitCommitID;
 	}

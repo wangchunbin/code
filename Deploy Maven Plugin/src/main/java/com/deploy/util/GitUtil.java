@@ -1,6 +1,8 @@
 package com.deploy.util;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -46,6 +48,18 @@ public class GitUtil {
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
 		Repository repository = builder.setGitDir(new File(localGitPath + "/.git")).readEnvironment().findGitDir().build();
 		return repository;
+	}
+	
+	/**
+	 * 使用CMD命令拉取远程分支更新,速度较快
+	 * 
+	 * @param localRepository
+	 * @param remoteBranchName
+	 * @throws Exception
+	 */
+	public static void pullByCmd(String localGitPath, String branch) throws Exception {
+		CmdUtil.execCMD(localGitPath, "git checkout " + branch);
+		CmdUtil.execCMD(localGitPath, "git pull");
 	}
 
 	/**
@@ -94,7 +108,7 @@ public class GitUtil {
 	}
 
 	/**
-	 * 拉取远程分支
+	 * 使用jgit拉取远程分支更新,速度较慢
 	 * 
 	 * @param localRepository
 	 * @param remoteBranchName
@@ -193,5 +207,44 @@ public class GitUtil {
 		checkoutCmd.setName(branchOrCommitID);
 		checkoutCmd.call();
 		git.close();
+	}
+	
+	/**
+	 * 获取所有git提交文件版本说明信息
+	 * 
+	 * @param localRepository
+	 * @return
+	 * @throws Exception
+	 */
+	public static Map<String, String>  getGitCommitFileVersionInfo(Repository localRepository) throws Exception {
+		Map<String, String> gitCommitFileVersionInfo = new HashMap<String, String>();// 保存提交备注信息
+		// commitMessage="classA={修改了method1}{DB版本号3.2}{hh}@classB={修改了method2}";
+		List<String> commitMessages =  new ArrayList<String>();
+		Git git = new Git(localRepository);
+		Iterable<RevCommit> iterable = git.log().call();
+		Iterator<RevCommit> iterator = iterable.iterator();
+		while (iterator.hasNext()) {
+			RevCommit rc = iterator.next();
+			String message = rc.getShortMessage();
+			if(message != null && !"".equals(message.trim())){
+				commitMessages.add(message);
+			}
+		}
+		if(commitMessages.size()>0){
+			Collections.reverse(commitMessages);// 反转，保持git commit顺序
+			for(String commitMessage : commitMessages){
+				String[] strs = commitMessage.split("@");
+				for (String str : strs) {
+					if (!StringUtil.isBlank(str)) {
+						String[] keyValue = str.split("=");
+						if (keyValue != null && keyValue.length == 2) {
+							gitCommitFileVersionInfo.put(keyValue[0].trim(), keyValue[1].trim());
+						}
+					}
+				}
+			}
+		}
+		git.close();
+		return gitCommitFileVersionInfo;
 	}
 }

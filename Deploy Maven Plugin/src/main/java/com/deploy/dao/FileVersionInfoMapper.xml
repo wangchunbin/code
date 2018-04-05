@@ -5,7 +5,7 @@
 		<id column="file" property="file" jdbcType="VARCHAR" />
 		<result column="deploy_id" property="deployId" jdbcType="INTEGER" />
 		<result column="version_number" property="versionNumber"
-			jdbcType="INTEGER" />
+			jdbcType="VARCHAR" />
 		<result column="information" property="information" jdbcType="VARCHAR" />
 		<result column="last_modify_time" property="lastModifyTime"
 			jdbcType="VARCHAR" />
@@ -50,7 +50,7 @@
 		)
 		values (#{file,jdbcType=VARCHAR},
 		#{deployId,jdbcType=INTEGER},
-		#{versionNumber,jdbcType=INTEGER},
+		#{versionNumber,jdbcType=VARCHAR},
 		#{information,jdbcType=VARCHAR}, #{lastModifyTime,jdbcType=VARCHAR},
 		#{fileSize,jdbcType=INTEGER}
 		)
@@ -85,7 +85,7 @@
 				#{deployId,jdbcType=INTEGER},
 			</if>
 			<if test="versionNumber != null">
-				#{versionNumber,jdbcType=INTEGER},
+				#{versionNumber,jdbcType=VARCHAR},
 			</if>
 			<if test="information != null">
 				#{information,jdbcType=VARCHAR},
@@ -105,7 +105,7 @@
 				deploy_id = #{deployId,jdbcType=INTEGER},
 			</if>
 			<if test="versionNumber != null">
-				version_number = #{versionNumber,jdbcType=INTEGER},
+				version_number = #{versionNumber,jdbcType=VARCHAR},
 			</if>
 			<if test="information != null">
 				information = #{information,jdbcType=VARCHAR},
@@ -123,7 +123,7 @@
 		update
 		file_version_info
 		set deploy_id = #{deployId,jdbcType=INTEGER},
-		version_number = #{versionNumber,jdbcType=INTEGER},
+		version_number = #{versionNumber,jdbcType=VARCHAR},
 		information =
 		#{information,jdbcType=VARCHAR},
 		last_modify_time =

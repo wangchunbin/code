@@ -4,11 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -253,5 +257,62 @@ public class FileUtil {
 		} else {
 			return libDirJarURLs;// 直接返回缓存
 		}
+	}
+	
+	/**
+	 * 获取jar变化
+	 * 
+	 * @param sourceLibDir
+	 * @param tomcatLibDir
+	 * @return
+	 */
+	public static Map<File,String> diffLibJar(File sourceLibDir, File tomcatLibDir){
+		if(sourceLibDir != null && sourceLibDir.exists() && tomcatLibDir !=null && tomcatLibDir.exists()){
+			File[] sourceJarFiles = sourceLibDir.listFiles(new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					if(name.contains(".jar")){
+						return true;
+					}
+					return false;
+				}
+			});
+			File[] tomcatJarFiles = tomcatLibDir.listFiles(new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					if(name.contains(".jar")){
+						return true;
+					}
+					return false;
+				}
+			});
+			Map<File,String> diffInfo = new HashMap<File,String>();
+			Map<String,File> tomcatJarMap = new HashMap<String,File>(); 
+			if(tomcatJarFiles != null && tomcatJarFiles.length > 0){
+				for(File file : tomcatJarFiles){
+					tomcatJarMap.put(file.getName(), file);
+				}
+			}
+		    if(sourceJarFiles !=null && sourceJarFiles.length > 0){
+		    	for(File file : sourceJarFiles){
+		    		File tomcatJar = tomcatJarMap.get(file.getName());
+		    		if(tomcatJar == null){
+		    			diffInfo.put(file, "ADD");
+		    		}else{
+		    			if(file.length() != tomcatJar.length()){
+		    				diffInfo.put(file, "MODIFY");
+		    			}
+		    			tomcatJarMap.remove(file.getName());
+		    		}
+		    	}
+		    	if(tomcatJarMap != null && tomcatJarMap.size() >0){
+		    		for(Entry<String,File> entry : tomcatJarMap.entrySet()){
+		    			diffInfo.put(entry.getValue(), "DELETE");
+		    		}
+		    	}
+		    	return diffInfo;
+		    }
+		}
+	    return null;
 	}
 }

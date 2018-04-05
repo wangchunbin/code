@@ -44,7 +44,7 @@ public class SqliteUtil {
 	 */
 	public static synchronized SqlSessionFactory getSqlSessionFactory() throws IOException {
 		if (ssf == null) {
-			String resource = "/com/das/his/dao/MybatisConfig.xml";
+			String resource = "/com/deploy/dao/MybatisConfig.xml";
 			InputStream inputStream = SqliteUtil.class.getResourceAsStream(resource);
 			ssf = new SqlSessionFactoryBuilder().build(inputStream);
 			return ssf;
@@ -85,13 +85,13 @@ public class SqliteUtil {
 		cm.executeUpdateSql(commonParam);
 		sqlSession.commit();
 		sql = "CREATE TABLE file_version_info (" + "file  TEXT(100) NOT NULL," + "deploy_id  INTEGER,"
-				+ "version_number  INTEGER," + "information  TEXT(200)," + "last_modify_time  TEXT(100),"
+				+ "version_number  TEXT(100)," + "information  TEXT(200)," + "last_modify_time  TEXT(100),"
 				+ "file_size  INTEGER," + "PRIMARY KEY (file ASC)" + ")";
 		commonParam.setSql(sql);
 		cm.executeUpdateSql(commonParam);
 		sqlSession.commit();
 		sql = "CREATE TABLE file_version_modify_bak (" + "ID  INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
-				+ "file  TEXT(100)," + "deploy_id  INTEGER," + "version_number  INTEGER," + "infomation  TEXT(200),"
+				+ "file  TEXT(100)," + "deploy_id  INTEGER," + "version_number  TEXT(100)," + "infomation  TEXT(200),"
 				+ "last_modify_time  TEXT(100)," + "file_size  INTEGER" + ")";
 		commonParam.setSql(sql);
 		cm.executeUpdateSql(commonParam);
@@ -177,8 +177,7 @@ public class SqliteUtil {
 	 * @param checkInfo
 	 * @throws IOException
 	 */
-	public static void saveFileVersionCheckInfo(Integer deployId, Integer lastDeployId,
-			Map<FileVersionInfo, String> checkInfo) throws IOException {
+	public static void saveFileVersionCheckInfo(Integer deployId, Integer lastDeployId, Map<FileVersionInfo, String> checkInfo) throws IOException {
 		if (checkInfo != null && checkInfo.size() > 0) {
 			SqlSession sqlSession = getSqlSessionFactory().openSession();
 			FileCheckInfoMapper fcim = sqlSession.getMapper(FileCheckInfoMapper.class);
@@ -205,8 +204,7 @@ public class SqliteUtil {
 	 * @param diffInfo
 	 * @throws IOException
 	 */
-	public static void saveGitDiffInfo(Integer deployId, String commitId, String lastCommitId,
-			Map<String, String> diffInfo) throws IOException {
+	public static void saveGitDiffInfo(Integer deployId, String commitId, String lastCommitId, Map<String, String> diffInfo) throws IOException {
 		if (diffInfo != null && diffInfo.size() > 0) {
 			SqlSession sqlSession = getSqlSessionFactory().openSession();
 			GitDiffInfoMapper gdim = sqlSession.getMapper(GitDiffInfoMapper.class);
@@ -341,7 +339,7 @@ public class SqliteUtil {
 		sqlSession.commit();
 		sqlSession.close();
 	}
-
+	
 	/**
 	 * 通过文件名字模糊查询文件版本信息
 	 * 
@@ -349,14 +347,14 @@ public class SqliteUtil {
 	 * @return
 	 * @throws IOException
 	 */
-	public static FileVersionInfo findFileVersionInfoByFileName(Map<String, String> param) throws IOException {
+	public static FileVersionInfo findFileVersionInfoByFileName(Map<String,String> param) throws IOException{
 		SqlSession sqlSession = getSqlSessionFactory().openSession();
 		FileVersionInfoMapper fvim = sqlSession.getMapper(FileVersionInfoMapper.class);
 		FileVersionInfo fvi = fvim.selectByFileName(param);
 		sqlSession.close();
 		return fvi;
 	}
-
+	
 	/**
 	 * 插入文件版本信息
 	 * 

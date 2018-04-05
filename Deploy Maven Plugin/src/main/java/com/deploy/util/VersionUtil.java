@@ -17,7 +17,6 @@ import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
 import org.apache.ibatis.session.SqlSession;
-import com.deploy.util.Version;
 import com.deploy.dao.FileVersionInfo;
 import com.deploy.dao.FileVersionInfoMapper;
 import javassist.ClassPool;
@@ -63,7 +62,7 @@ public class VersionUtil {
 	 * @param diffInfo
 	 * @throws Exception
 	 */
-	public static void incrementalWriteVersion(File sourceDir, String projectName, String commitMessage, Map<String, String> diffInfo) throws Exception {
+	public static void incrementalWriteVersion(File sourceDir, String projectName, String newProjectVersion, Map<String, String> gitCommitFileVersionInfo, Map<String, String> diffInfo) throws Exception {
 		if (!FileUtil.isNullDir(sourceDir) && diffInfo != null && diffInfo.size() > 0) {// 判空
 			List<File> fileList = new ArrayList<File>();// 保存待处理的增量文件
 			for (Entry<String, String> entry : diffInfo.entrySet()) {// 转换文件路径
@@ -86,19 +85,6 @@ public class VersionUtil {
 				}
 			}
 			if (fileList != null && fileList.size() > 0) {
-				// commitMessage="classA={修改了method1}{DB版本号3.2}{hh}@classB={修改了method2}";
-				Map<String, String> commitMsg = new HashMap<String, String>();// 保存提交备注信息
-				if (!StringUtil.isBlank(commitMessage)) {// 切割出提交备注信息
-					String[] strs = commitMessage.split("@");
-					for (String str : strs) {
-						if (!StringUtil.isBlank(str)) {
-							String[] keyValue = str.split("=");
-							if (keyValue != null && keyValue.length == 2) {
-								commitMsg.put(keyValue[0].trim(), keyValue[1].trim());
-							}
-						}
-					}
-				}
 				for (File file : fileList) {
 					String shortName = null;// 文件短名称(包名+文件名(不包含文件后缀))
 					String suffix=null;
@@ -122,29 +108,29 @@ public class VersionUtil {
 					FileVersionInfo oldFvi  = SqliteUtil.findFileVersionInfoByFileName(param);// 查询Sqlite数据库中对应文件版本信息
 					if (oldFvi == null) {
 						boolean flag = true;
-						if (commitMsg != null && commitMsg.size() > 0) {
-							for (String key : commitMsg.keySet()) {
+						if (gitCommitFileVersionInfo != null && gitCommitFileVersionInfo.size() > 0) {
+							for (String key : gitCommitFileVersionInfo.keySet()) {
 								if (key.contains(shortName.replace("\\", "/") + suffix)) {// 判断提交备注信息中是否包含该文件，如果包含则将备注信息写入到版本信息中
-									writeVersion(file, 1, commitMsg.get(key));
+									writeVersion(file, newProjectVersion, gitCommitFileVersionInfo.get(key));
 									flag = false;
 								}
 							}
 						}
 						if(flag){
-							writeVersion(file, 1, commitMessage);
+							writeVersion(file, newProjectVersion, "");
 						}
 					}else{
 						boolean flag = true;
-						if (commitMsg != null && commitMsg.size() > 0) {
-							for (String key : commitMsg.keySet()) {
+						if (gitCommitFileVersionInfo != null && gitCommitFileVersionInfo.size() > 0) {
+							for (String key : gitCommitFileVersionInfo.keySet()) {
 								if (key.contains(shortName.replace("\\", "/") + suffix)) {// 判断提交备注信息中是否包含该文件，如果包含则将备注信息写入到版本信息中
-									writeVersion(file, oldFvi.getVersionNumber() + 1, commitMsg.get(key));
+									writeVersion(file, newProjectVersion, gitCommitFileVersionInfo.get(key));
 									flag = false;
 								}
 							}
 						}
 						if (flag) {
-							writeVersion(file, oldFvi.getVersionNumber() + 1, commitMessage);
+							writeVersion(file, newProjectVersion, "");
 						}
 					}
 				}
@@ -158,7 +144,7 @@ public class VersionUtil {
 	 * @param sourceDir
 	 * @throws Exception
 	 */
-	public static void batchWriteInitVersion(File sourceDir) throws Exception {
+	public static void batchWriteInitVersion(File sourceDir, String newProjectVersion) throws Exception {
 		if (sourceDir != null && sourceDir.exists() && sourceDir.isDirectory()) {// 判空
 			List<File> tempFileList = new ArrayList<File>();
 			FileUtil.listFiles(sourceDir, tempFileList); // 递归获取文件夹下文件
@@ -186,7 +172,7 @@ public class VersionUtil {
 					} else {
 						subList = fileList.subList(cursor, cursor += fileCount);
 					}
-					new WriteInitVersionThread(subList, cdl).start();// 启动任务线程
+					new WriteInitVersionThread(subList, cdl, newProjectVersion).start();// 启动任务线程
 				}
 				cdl.await();// 等待任务线程执行完
 			}
@@ -203,10 +189,13 @@ public class VersionUtil {
 		private List<File> fileList;
 
 		private CountDownLatch countDownLatch;
+		
+		private String newProjectVersion;
 
-		public WriteInitVersionThread(List<File> fileList, CountDownLatch countDownLatch) {
+		public WriteInitVersionThread(List<File> fileList, CountDownLatch countDownLatch, String newProjectVersion) {
 			this.fileList = fileList;
 			this.countDownLatch = countDownLatch;
+			this.newProjectVersion =  newProjectVersion;
 		}
 
 		@Override
@@ -214,7 +203,7 @@ public class VersionUtil {
 			try {
 				if (fileList != null && fileList.size() > 0) {
 					for (File file : fileList) {
-						writeVersion(file, 1, "初始版本！"); // 写入初始版本信息
+						writeVersion(file, newProjectVersion, "初始版本！"); // 写入初始版本信息
 					}
 				}
 			} catch (Exception e) {
@@ -233,69 +222,71 @@ public class VersionUtil {
 	 * @param information
 	 * @throws Exception
 	 */
-	public static void writeVersion(File sourceFile, Integer versionNumber, String information) throws Exception {
-		if (sourceFile == null || versionNumber == null || information == null) {// 判空
-			throw new Exception("传入的参数不能为null！");
-		}
-		FileInputStream fis = new FileInputStream(sourceFile);
-		BufferedReader br = new BufferedReader(new InputStreamReader(fis, "GBK"));
-		StringBuffer sb = new StringBuffer();
-		String line = null;
-		String suffix = sourceFile.getName().substring(sourceFile.getName().lastIndexOf(".") + 1);
-		if ("java".equals(suffix)) {// 写入Version Annotation
-			String javaName = sourceFile.getName().substring(0, sourceFile.getName().indexOf(".java"));
-			int lineCount = 0;
-			while ((line = br.readLine()) != null) {
-				if (line.matches("^\\s*public\\s+class\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+class\\s+", "@com.das.version.Version(versionNumber="
-							+ versionNumber + ",information=\"" + information + "\")\r\npublic class ");
-				}
-				if (line.matches("^\\s*class\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*class\\s+", "@com.das.version.Version(versionNumber=" + versionNumber
-							+ ",information=\"" + information + "\")\r\nclass ");
-				}
-				if (line.matches("^\\s*public\\s+abstract\\s+class\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+abstract\\s+class\\s+",
-							"@com.das.version.Version(versionNumber=" + versionNumber + ",information=\"" + information
-									+ "\")\r\npublic abstract class ");
-				}
-				if (line.matches("^\\s*public\\s+final\\s+class\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+final\\s+class\\s+",
-							"@com.das.version.Version(versionNumber=" + versionNumber + ",information=\"" + information
-									+ "\")\r\npublic final class ");
-				}
-				if (line.matches("^\\s*public\\s+interface\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+interface\\s+", "@com.das.version.Version(versionNumber="
-							+ versionNumber + ",information=\"" + information + "\")\r\npublic interface ");
-				}
-				if (line.matches("^\\s*public\\s+@interface\\s+" + javaName + ".*")) {
-					line = line.replaceFirst("^\\s*public\\s+@interface\\s+", "@com.das.version.Version(versionNumber="
-							+ versionNumber + ",information=\"" + information + "\")\r\npublic @interface ");
-				}
-				if (lineCount > 0) {
-					line = "\r\n" + line;
-				}
-				sb.append(line);
-				lineCount++;
+	public static void writeVersion(File sourceFile, String versionNumber, String information) throws Exception {
+		if(sourceFile != null && sourceFile.exists()){
+			if (versionNumber == null || information == null) {// 判空
+				throw new Exception("传入的版本信息不能为null！");
 			}
-		} else if ("x".equals(suffix)) {// 写入版本信息行
-			sb.append("#versionNumber=" + versionNumber + "\r\n");
-			sb.append("#information=" + information.replace("\r\n", " "));
-			while ((line = br.readLine()) != null) {
-				sb.append("\r\n" + line);
+			FileInputStream fis = new FileInputStream(sourceFile);
+			BufferedReader br = new BufferedReader(new InputStreamReader(fis, "GBK"));
+			StringBuffer sb = new StringBuffer();
+			String line = null;
+			String suffix = sourceFile.getName().substring(sourceFile.getName().lastIndexOf(".") + 1);
+			if ("java".equals(suffix)) {// 写入Version Annotation
+				String javaName = sourceFile.getName().substring(0, sourceFile.getName().indexOf(".java"));
+				int lineCount = 0;
+				while ((line = br.readLine()) != null) {
+					if (line.matches("^\\s*public\\s+class\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+class\\s+", "@com.das.version.Version(versionNumber=\""
+								+ versionNumber + "\",information=\"" + information + "\")\r\npublic class ");
+					}
+					if (line.matches("^\\s*class\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*class\\s+", "@com.das.version.Version(versionNumber=\"" + versionNumber
+								+ "\",information=\"" + information + "\")\r\nclass ");
+					}
+					if (line.matches("^\\s*public\\s+abstract\\s+class\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+abstract\\s+class\\s+",
+								"@com.das.version.Version(versionNumber=\"" + versionNumber + "\",information=\"" + information
+										+ "\")\r\npublic abstract class ");
+					}
+					if (line.matches("^\\s*public\\s+final\\s+class\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+final\\s+class\\s+",
+								"@com.das.version.Version(versionNumber=\"" + versionNumber + "\",information=\"" + information
+										+ "\")\r\npublic final class ");
+					}
+					if (line.matches("^\\s*public\\s+interface\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+interface\\s+", "@com.das.version.Version(versionNumber=\""
+								+ versionNumber + "\",information=\"" + information + "\")\r\npublic interface ");
+					}
+					if (line.matches("^\\s*public\\s+@interface\\s+" + javaName + ".*")) {
+						line = line.replaceFirst("^\\s*public\\s+@interface\\s+", "@com.das.version.Version(versionNumber=\""
+								+ versionNumber + "\",information=\"" + information + "\")\r\npublic @interface ");
+					}
+					if (lineCount > 0) {
+						line = "\r\n" + line;
+					}
+					sb.append(line);
+					lineCount++;
+				}
+			} else if ("x".equals(suffix)) {// 写入版本信息行
+				sb.append("#versionNumber=" + versionNumber + "\r\n");
+				sb.append("#information=" + information.replace("\r\n", " "));
+				while ((line = br.readLine()) != null) {
+					sb.append("\r\n" + line);
+				}
 			}
+			br.close();
+			fis.close();
+			String content = sb.toString();
+			/*File dir=sourceFile.getParentFile();
+			if(!dir.exists()){
+				dir.mkdirs();
+			}*/
+			FileOutputStream fos = new FileOutputStream(sourceFile);
+			fos.write(content.getBytes("GBK"));
+			fos.flush();
+			fos.close();
 		}
-		br.close();
-		fis.close();
-		String content = sb.toString();
-		File dir=sourceFile.getParentFile();
-		if(!dir.exists()){
-			dir.mkdirs();
-		}
-		FileOutputStream fos = new FileOutputStream(sourceFile);
-		fos.write(content.getBytes("GBK"));
-		fos.flush();
-		fos.close();
 	}
 
     /**
@@ -334,10 +325,10 @@ public class VersionUtil {
 	 * @param file
 	 * @return
 	 */
-	public static Map<String, Object> getVersionInfo(File tomcatProjectfile) throws Exception {
+	public static Map<String, String> getVersionInfo(File tomcatProjectfile) throws Exception {
 		if (tomcatProjectfile != null && tomcatProjectfile.exists()
 				&& (tomcatProjectfile.getName().endsWith(".class") || tomcatProjectfile.getName().endsWith(".x"))) {// 判空
-			Map<String, Object> versionInfo = new HashMap<String, Object>();
+			Map<String, String> versionInfo = new HashMap<String, String>();
 			if (tomcatProjectfile.getName().endsWith(".class")) {
 				String path = tomcatProjectfile.getPath();
 				String className = path.substring(path.indexOf("classes\\") + "classes\\".length(), path.lastIndexOf(".")).replace("\\", ".");// 切割出类名
@@ -368,7 +359,7 @@ public class VersionUtil {
 				while ((line = br.readLine()) != null) {
 					if (lineCount == 0) {
 						if (line.contains("#versionNumber=")) {
-							versionInfo.put("versionNumber", Integer.parseInt(line.replace("#versionNumber=", "").trim()));
+							versionInfo.put("versionNumber", line.replace("#versionNumber=", "").trim());
 						}
 					} else if (lineCount == 1) {
 						if (line.contains("#information=")) {
@@ -411,30 +402,30 @@ public class VersionUtil {
 						modifyInfo.put(tomcatFvi, "新增");
 					} else {
 						StringBuffer sb = new StringBuffer();
-						Integer i1 = tomcatFvi.getVersionNumber();
-						Integer i2 = file.getVersionNumber();
-						if (i1 != null) {
-							if (!i1.equals(i2)) {
+						String versionNumber1 = tomcatFvi.getVersionNumber();
+						String versionNumber2 = file.getVersionNumber();
+						if (versionNumber1 != null) {
+							if (!versionNumber1.equals(versionNumber2)) {
 								sb.append("文件版本有变化，上次记录:" + file.getVersionNumber() + ",当前tomcat该文件:" + tomcatFvi.getVersionNumber() + "。");
 							}
-						} else if (i2 != null) {
+						} else if (versionNumber2 != null) {
 							sb.append("文件版本有变化，上次记录:" + file.getVersionNumber() + ",当前tomcat该文件:" + tomcatFvi.getVersionNumber() + "。");
 						}
-						String s1 = tomcatFvi.getInformation();
-						String s2 = file.getInformation();
-						if (!StringUtil.isBlank(s1)) {
-							if (!s1.equals(s2)) {
+						String information1 = tomcatFvi.getInformation();
+						String information2 = file.getInformation();
+						if (!StringUtil.isBlank(information1)) {
+							if (!information1.equals(information2)) {
 								sb.append("文件版本说明有变化，上次记录:" + file.getInformation() + ",当前:" + tomcatFvi.getInformation() + "。");
 							}
-						} else if (!StringUtil.isBlank(s2)) {
+						} else if (!StringUtil.isBlank(information2)) {
 							sb.append("文件版本说明有变化，上次记录:" + file.getInformation() + ",当前:" + tomcatFvi.getInformation() + "。");
 						}
-						if (!tomcatFvi.getFileSize().equals(file.getFileSize())) {
+						/*if (!tomcatFvi.getFileSize().equals(file.getFileSize())) {
 							sb.append("文件大小有变化，上次记录:" + file.getFileSize() + ",当前tomcat该文件:" + tomcatFvi.getFileSize() + "。");
 						}
 						if (!tomcatFvi.getLastModifyTime().equals(file.getLastModifyTime())) {
 							sb.append("文件修改时间有变化，上次记录:" + file.getLastModifyTime() + ",当前tomcat该文件:" + tomcatFvi.getLastModifyTime() + "。");
-						}
+						}*/
 						if (!StringUtil.isBlank(sb.toString())) {
 							tomcatFvi.setDeployId(file.getDeployId());// 添加旧DeployId，以便更新
 							modifyInfo.put(tomcatFvi, sb.toString());
@@ -465,7 +456,7 @@ public class VersionUtil {
 		FileUtil.listFiles(tomcatProjectDir, fileList);
 		if (fileList != null && fileList.size() > 0) {
 			List<FileVersionInfo> vector = new Vector<FileVersionInfo>();
-			int threadCount = 4;
+			int threadCount = 8;
 			int size = fileList.size();
 			threadCount = Math.min(threadCount, size);
 			int fileCount = size / threadCount;
@@ -522,10 +513,10 @@ public class VersionUtil {
 						fvi.setFileSize(Long.valueOf(file.length()).intValue());
 						cal.setTimeInMillis(file.lastModified());
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
-						Map<String, Object> versionInfo = VersionUtil.getVersionInfo(file);
+						Map<String, String> versionInfo = VersionUtil.getVersionInfo(file);
 						if (versionInfo != null && versionInfo.size() > 0) {
-							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : (Integer) versionInfo.get("versionNumber"));
-							fvi.setInformation(versionInfo.get("information") == null ? null : (String) versionInfo.get("information"));
+							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : versionInfo.get("versionNumber"));
+							fvi.setInformation(versionInfo.get("information") == null ? null : versionInfo.get("information"));
 						}
 						vector.add(fvi);
 					}
@@ -573,10 +564,10 @@ public class VersionUtil {
 						fvi.setFileSize(Long.valueOf(tomcatFile.length()).intValue());
 						cal.setTimeInMillis(tomcatFile.lastModified());
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
-						Map<String, Object> versionInfo = getVersionInfo(tomcatFile);
+						Map<String, String> versionInfo = getVersionInfo(tomcatFile);
 						if (versionInfo != null && versionInfo.size() > 0) {
-							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : (Integer) versionInfo.get("versionNumber"));
-							fvi.setInformation(versionInfo.get("information") == null ? null : (String) versionInfo.get("information"));
+							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : versionInfo.get("versionNumber"));
+							fvi.setInformation(versionInfo.get("information") == null ? null : versionInfo.get("information"));
 						}
 						// 1.备份
 						FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(fvi.getFile());
@@ -597,7 +588,9 @@ public class VersionUtil {
 						FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(tomcatFile.getPath());
 						SqliteUtil.insertFileVersionModifyBak(oldFvi);
 						// 2.删除
-						SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
+						if(oldFvi != null){
+							SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
+						}
 					}
 				}
 				if (filePath.contains("/src")) {
@@ -611,10 +604,10 @@ public class VersionUtil {
 						fvi.setFileSize(Long.valueOf(file.length()).intValue());
 						cal.setTimeInMillis(tomcatFile.lastModified());
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
-						Map<String, Object> versionInfo = getVersionInfo(tomcatFile);
+						Map<String, String> versionInfo = getVersionInfo(tomcatFile);
 						if (versionInfo != null && versionInfo.size() > 0) {
-							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : (Integer) versionInfo.get("versionNumber"));
-							fvi.setInformation(versionInfo.get("information") == null ? null : (String) versionInfo.get("information"));
+							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : versionInfo.get("versionNumber"));
+							fvi.setInformation(versionInfo.get("information") == null ? null : versionInfo.get("information"));
 						}
 						// 1.备份
 						FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(fvi.getFile());
@@ -624,7 +617,7 @@ public class VersionUtil {
 						if(info.getValue().contains("ADD")){
 							SqliteUtil.insertFileVersionInfo(fvi);
 						}else if(info.getValue().contains("DELETE")){
-							if(oldFvi!=null){
+							if(oldFvi != null){
 								SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
 							}
 						}else{
@@ -635,10 +628,28 @@ public class VersionUtil {
 						FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(tomcatFile.getPath());
 						SqliteUtil.insertFileVersionModifyBak(oldFvi);
 						// 2.删除
-						SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
+						if(oldFvi != null){
+							SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
+						}
 					}
 				}
 			}
+		}
+		File projectVersionFile=new File(tomcatProjectDir.getPath() + "/" + "version.txt");
+		if(projectVersionFile != null && projectVersionFile.exists()){//更新项目版本文件版本信息
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			Calendar cal = Calendar.getInstance();
+			FileVersionInfo fvi = new FileVersionInfo();
+			fvi.setFile(projectVersionFile.getPath());
+			fvi.setFileSize(Long.valueOf(projectVersionFile.length()).intValue());
+			cal.setTimeInMillis(projectVersionFile.lastModified());
+			fvi.setLastModifyTime(sdf.format(cal.getTime()));
+			// 1.备份
+			FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(fvi.getFile());
+			SqliteUtil.insertFileVersionModifyBak(oldFvi);
+			// 2.更新
+			fvi.setDeployId(deployId);
+			SqliteUtil.updateFileVersionInfo(fvi);
 		}
 	}
 
@@ -730,10 +741,10 @@ public class VersionUtil {
 						fvi.setFileSize(Long.valueOf(file.length()).intValue());
 						cal.setTimeInMillis(file.lastModified());
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
-						Map<String, Object> versionInfo = VersionUtil.getVersionInfo(file);
+						Map<String, String> versionInfo = VersionUtil.getVersionInfo(file);
 						if (versionInfo != null && versionInfo.size() > 0) {
-							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : (Integer) versionInfo.get("versionNumber"));
-							fvi.setInformation(versionInfo.get("information") == null ? null : (String) versionInfo.get("information"));
+							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : versionInfo.get("versionNumber"));
+							fvi.setInformation(versionInfo.get("information") == null ? null : versionInfo.get("information"));
 						}
 						list.add(fvi);
 					}

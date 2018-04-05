@@ -13,7 +13,7 @@ public @interface Version {
 	 * 
 	 * @return
 	 */
-	int versionNumber();
+	String versionNumber();
 
 	/**
 	 * 版本信息
