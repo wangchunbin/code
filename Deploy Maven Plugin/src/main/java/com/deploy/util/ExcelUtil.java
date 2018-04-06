@@ -101,23 +101,22 @@ public class ExcelUtil {
 	 * @throws Exception
 	 */
 	public static void saveIncrementalInfo(String savePath, String projectAtGitRepositoryPath, Map<String,String> gitCommitFileVersionInfo, Map<String,String> diffInfo, Map<File, String> jarDiffInfo) throws Exception{
-		if(diffInfo!=null&&diffInfo.size()>0){
-			@SuppressWarnings("resource")
-			HSSFWorkbook workbook = new HSSFWorkbook();
-			HSSFSheet sheet = workbook.createSheet("增量清单");
-			sheet.setColumnWidth(0, 256*45+184);
-			sheet.setColumnWidth(1, 256*45+184);
-			sheet.setColumnWidth(2, 256*45+184);
-			HSSFRow row = sheet.createRow(0);
-			row.createCell(0).setCellValue("文件");
-			row.createCell(1).setCellValue("修改类型");
-			row.createCell(2).setCellValue("备注");
-			int rowNum = 1;
+		@SuppressWarnings("resource")
+		HSSFWorkbook workbook = new HSSFWorkbook();
+		HSSFSheet sheet = workbook.createSheet("增量清单");
+		sheet.setColumnWidth(0, 256*45+184);
+		sheet.setColumnWidth(1, 256*45+184);
+		sheet.setColumnWidth(2, 256*45+184);
+		HSSFRow row = sheet.createRow(0);
+		row.createCell(0).setCellValue("文件");
+		row.createCell(1).setCellValue("修改类型");
+		row.createCell(2).setCellValue("备注");
+		int rowNum = 1;
+		if(diffInfo!=null && diffInfo.size()>0){
 			for(Entry<String, String> entry : diffInfo.entrySet()){
 				if(entry.getKey().contains("WEB-INF/config/system")){// 过滤掉system目录下文件，不写入增量包
 					continue;
 				}
-				HSSFRow temp = sheet.createRow(rowNum);
 				String fileName=null;
 				String filePath = entry.getKey();
 				if (filePath.contains("/WebContent")) {
@@ -125,7 +124,10 @@ public class ExcelUtil {
 				}else if(filePath.contains("/src")){
 					String file = filePath.replace(projectAtGitRepositoryPath + "/src/", "").replace(".java", ".class");
 					fileName = "WEB-INF/classes/" + file;
+				}else{
+					continue;
 				}
+				HSSFRow temp = sheet.createRow(rowNum);
 				temp.createCell(0).setCellValue(fileName);
 				temp.createCell(1).setCellValue(entry.getValue());
 				boolean flag = false;
@@ -145,19 +147,19 @@ public class ExcelUtil {
 				}
 				rowNum++;
 			}
-			if(jarDiffInfo != null && jarDiffInfo.size() > 0){
-				for(Entry<File,String> entry : jarDiffInfo.entrySet()){
-					HSSFRow temp = sheet.createRow(rowNum);
-					temp.createCell(0).setCellValue("WEB-INF/lib/"+entry.getKey().getName());
-					temp.createCell(1).setCellValue(entry.getValue());
-					rowNum++;
-				}
-			}
-			File file =new File(savePath);
-			file.getParentFile().mkdirs();
-			FileOutputStream out = new FileOutputStream(savePath);
-			workbook.write(out);
-			out.close();
 		}
+		if(jarDiffInfo != null && jarDiffInfo.size() > 0){
+			for(Entry<File,String> entry : jarDiffInfo.entrySet()){
+				HSSFRow temp = sheet.createRow(rowNum);
+				temp.createCell(0).setCellValue("WEB-INF/lib/"+entry.getKey().getName());
+				temp.createCell(1).setCellValue(entry.getValue());
+				rowNum++;
+			}
+		}
+		File file =new File(savePath);
+		file.getParentFile().mkdirs();
+		FileOutputStream out = new FileOutputStream(savePath);
+		workbook.write(out);
+		out.close();
 	}
 }

@@ -377,6 +377,11 @@ public class DeployMojo extends AbstractMojo {
 			getLog().info("正在执行对比jar包差异操作...");
 			try {
 				jarDiffInfo = FileUtil.diffLibJar(new File(tempDir.getPath()+"/WEB-INF/lib"), new File(tomcatProjectDir+"/WEB-INF/lib"));
+				if (jarDiffInfo != null && jarDiffInfo.size() > 0) {
+					for (Entry<File, String> entry : jarDiffInfo.entrySet()) {
+						getLog().warn("文件:" + entry.getKey().getName() + ",修改类型:" + entry.getValue());
+					}
+				}
 			} catch (Exception e) {
 				e.printStackTrace();
 				throw new MojoFailureException("执行对比jar包差异操作失败！");
