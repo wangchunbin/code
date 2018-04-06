@@ -538,7 +538,7 @@ public class VersionUtil {
 	 * @param diffInfo
 	 * @throws Exception
 	 */
-	public static void saveIncrementalTomcatFileVersionInfo(Integer deployId, File tomcatProjectDir, Map<FileVersionInfo, String> checkInfo, String projectAtGitRepositoryPath, Map<String, String> diffInfo) throws Exception {
+	public static void saveIncrementalTomcatFileVersionInfo(Integer deployId, File tomcatProjectDir, Map<FileVersionInfo, String> checkInfo, String projectAtGitRepositoryPath, Map<String, String> diffInfo , Map<File, String> jarDiffInfo) throws Exception {
 		if (checkInfo != null && checkInfo.size() > 0) {
 			for (Entry<FileVersionInfo, String> entry : checkInfo.entrySet()) {
 				FileVersionInfo newFvi = entry.getKey();
@@ -631,6 +631,51 @@ public class VersionUtil {
 						if(oldFvi != null){
 							SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
 						}
+					}
+				}
+			}
+		}
+		if(jarDiffInfo !=null && jarDiffInfo.size() >0){
+			for (Entry<File, String> entry : jarDiffInfo.entrySet()) {
+				if(entry.getValue().contains("ADD")){
+					File tomcatFile = new File(tomcatProjectDir + "/WEB-INF/lib/" + entry.getKey().getName());
+					if (tomcatFile.exists()) {
+						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						Calendar cal = Calendar.getInstance();
+						FileVersionInfo fvi = new FileVersionInfo();
+						fvi.setFile(tomcatFile.getPath());
+						fvi.setFileSize(Long.valueOf(tomcatFile.length()).intValue());
+						cal.setTimeInMillis(tomcatFile.lastModified());
+						fvi.setLastModifyTime(sdf.format(cal.getTime()));
+						fvi.setDeployId(deployId);
+						SqliteUtil.insertFileVersionInfo(fvi);
+					}
+				}
+				if(entry.getValue().contains("MODIFY")){
+					File tomcatFile = new File(tomcatProjectDir + "/WEB-INF/lib/" + entry.getKey().getName());
+					if (tomcatFile.exists()) {
+						SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+						Calendar cal = Calendar.getInstance();
+						FileVersionInfo fvi = new FileVersionInfo();
+						fvi.setFile(tomcatFile.getPath());
+						fvi.setFileSize(Long.valueOf(tomcatFile.length()).intValue());
+						cal.setTimeInMillis(tomcatFile.lastModified());
+						fvi.setLastModifyTime(sdf.format(cal.getTime()));
+						// 1.备份
+						FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(fvi.getFile());
+						SqliteUtil.insertFileVersionModifyBak(oldFvi);
+						// 2.更新
+						fvi.setDeployId(deployId);
+						SqliteUtil.updateFileVersionInfo(fvi);
+					}
+				}
+				if(entry.getValue().contains("DELETE")){
+					// 1.备份
+					FileVersionInfo oldFvi = SqliteUtil.getFileVersinInfo(entry.getKey().getPath());
+					SqliteUtil.insertFileVersionModifyBak(oldFvi);
+					// 2.删除
+					if(oldFvi != null){
+						SqliteUtil.deleteFileVersionInfo(oldFvi.getFile());
 					}
 				}
 			}

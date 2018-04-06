@@ -372,11 +372,22 @@ public class DeployMojo extends AbstractMojo {
 			throw new MojoFailureException("执行备份目录下创建相关目录并解压war包操作失败！");
 		}
 		getLog().info("执行备份目录下创建相关目录并解压war包操作成功！");
+		Map<File, String> jarDiffInfo = null;// jar差异信息
+		if (isIncrementalDeployment) {
+			getLog().info("正在执行对比jar包差异操作...");
+			try {
+				jarDiffInfo = FileUtil.diffLibJar(new File(tempDir.getPath()+"/WEB-INF/lib"), new File(tomcatProjectDir+"/WEB-INF/lib"));
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new MojoFailureException("执行对比jar包差异操作失败！");
+			}
+			getLog().info("执行对比jar包差异操作成功！");
+		}
 		if (isIncrementalDeployment) {
 			getLog().info("开始执行增量部署...");
 			try {
+				getLog().info("正在执行文件备份、替换及增量文件打包操作...");
 				if (diffInfo.size() > 0) {
-					getLog().info("正在执行文件备份、替换及增量文件打包操作...");
 					for (Map.Entry<String, String> info : diffInfo.entrySet()) {
 						String filePath = info.getKey();
 						if (filePath.contains("/WebContent")) {
@@ -429,40 +440,41 @@ public class DeployMojo extends AbstractMojo {
 							}
 						}
 					}
-					Map<File, String> jarDiffInfo = FileUtil.diffLibJar(new File(tempDir.getPath()+"/WEB-INF/lib"), new File(tomcatProjectDir+"/WEB-INF/lib"));
-					if(jarDiffInfo !=null && jarDiffInfo.size() > 0){
-						for(Entry<File,String> entry : jarDiffInfo.entrySet()){
-							if(!entry.getValue().contains("ADD")){// 1.备份
-								String fileBackupDirPath = tomcatBackupDir.getPath() + "/WEB-INF/lib";
-								File fileBackupDir = new File(fileBackupDirPath);
-								fileBackupDir.mkdirs();
-								if(entry.getValue().contains("DELETE")){// 删除备份
-									FileUtil.copyFileToDir(entry.getKey(), fileBackupDir);
-								}else{// 修改备份
-									FileUtil.copyFileToDir(new File(tomcatProjectDir+ "/WEB-INF/lib/" +entry.getKey().getName()), fileBackupDir);
-								}
-							}
-							// 2.替换或删除文件
-							if(entry.getValue().contains("DELETE")){
-								FileUtil.deleteDirOrFile(entry.getKey().getPath());
-							}else{
-								FileUtil.replaceFile(entry.getKey(), new File(tomcatProjectDir+ "/WEB-INF/lib/" +entry.getKey().getName()));
-								// 3.将文件放入到增量目录
-								File incrementalDir = new File(backupDir + "/" + stamp + "/incremental/code/WEB-INF/lib");
-								incrementalDir.mkdirs();
-								FileUtil.copyFileToDir(entry.getKey(), incrementalDir);
+				} else {
+					getLog().info("git版本内容无差异！");
+				}
+				if(jarDiffInfo !=null && jarDiffInfo.size() > 0){
+					for(Entry<File,String> entry : jarDiffInfo.entrySet()){
+						if(!entry.getValue().contains("ADD")){// 1.备份
+							String fileBackupDirPath = tomcatBackupDir.getPath() + "/WEB-INF/lib";
+							File fileBackupDir = new File(fileBackupDirPath);
+							fileBackupDir.mkdirs();
+							if(entry.getValue().contains("DELETE")){// 删除备份
+								FileUtil.copyFileToDir(entry.getKey(), fileBackupDir);
+							}else{// 修改备份
+								FileUtil.copyFileToDir(new File(tomcatProjectDir+ "/WEB-INF/lib/" +entry.getKey().getName()), fileBackupDir);
 							}
 						}
+						// 2.替换或删除文件
+						if(entry.getValue().contains("DELETE")){
+							FileUtil.deleteDirOrFile(entry.getKey().getPath());
+						}else{
+							FileUtil.replaceFile(entry.getKey(), new File(tomcatProjectDir+ "/WEB-INF/lib/" +entry.getKey().getName()));
+							// 3.将文件放入到增量目录
+							File incrementalDir = new File(backupDir + "/" + stamp + "/incremental/code/WEB-INF/lib");
+							incrementalDir.mkdirs();
+							FileUtil.copyFileToDir(entry.getKey(), incrementalDir);
+						}
 					}
-					String incrementalFilePath = backupDir.getPath() + "/" + stamp + "/incremental/incremental.xls";// 生成增量文件清单
-					ExcelUtil.saveIncrementalInfo(incrementalFilePath, projectAtGitRepositoryPath, gitCommitFileVersionInfo, diffInfo, jarDiffInfo);
-				} else {
-					getLog().info("版本无差异！");
+				}else{
+					getLog().info("jar无差异！");
 				}
+				String incrementalFilePath = backupDir.getPath() + "/" + stamp + "/incremental/incremental.xls";// 生成增量文件清单
+				ExcelUtil.saveIncrementalInfo(incrementalFilePath, projectAtGitRepositoryPath, gitCommitFileVersionInfo, diffInfo, jarDiffInfo);
 				getLog().info("正在更新tomcat项目版本信息...");
 				FileUtil.newFile(tomcatProjectDir.getPath() + "/" + "version.txt", deployMain.getDeployId() + ":" + branch + ":" + newCommitID + ":" + newProjectVersion);// 更新tomcat项目版本信息
 				getLog().info("正在保存tomcat项目中文件版本信息...");
-				VersionUtil.saveIncrementalTomcatFileVersionInfo(deployMain.getDeployId(), tomcatProjectDir, checkInfo, projectAtGitRepositoryPath, diffInfo);
+				VersionUtil.saveIncrementalTomcatFileVersionInfo(deployMain.getDeployId(), tomcatProjectDir, checkInfo, projectAtGitRepositoryPath, diffInfo, jarDiffInfo);
 			} catch (Exception e) {
 				e.printStackTrace();
 				throw new MojoFailureException("执行增量部署失败！");
