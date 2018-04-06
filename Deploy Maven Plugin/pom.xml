@@ -141,6 +141,15 @@
 		</dependency>
 	</dependencies>
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/java/com/deploy/dao</directory>
+				<includes>
+					<include>**/*.xml</include>
+				</includes>
+				<targetPath>com/deploy/dao</targetPath>
+			</resource>
+		</resources>
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
