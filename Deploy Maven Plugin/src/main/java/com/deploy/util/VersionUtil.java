@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -16,6 +15,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Vector;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.locks.ReentrantLock;
 import org.apache.ibatis.session.SqlSession;
 import com.deploy.dao.FileVersionInfo;
 import com.deploy.dao.FileVersionInfoMapper;
@@ -303,13 +303,12 @@ public class VersionUtil {
 		ClassPool pool = (ClassPool) threadLocal.get();
 		try{
 			if(pool == null){
-				URL[] libJarURLs = FileUtil.getTomcatProjectLibJarURL(libPath);
-				URL classPathURL = new File(classPath).toURI().toURL();
+				String[] libJarPaths = FileUtil.getTomcatProjectLibJarPaths(libPath);
 				pool = ClassPool.getDefault();
-				for(URL url : libJarURLs){
-					pool.appendClassPath(url.getFile());
+				for(String path : libJarPaths){
+					pool.appendClassPath(path);
 				}
-				pool.appendClassPath(classPathURL.getFile());
+				pool.appendClassPath(classPath);
 				pool.appendSystemPath();
 				threadLocal.set(pool);
 			}
@@ -318,6 +317,16 @@ public class VersionUtil {
 		}
 		return pool;
 	}
+
+	/**
+	 * 项目jar包加载路径
+	 */
+	private static String libPath = null;
+	
+	/**
+	 * 锁
+	 */
+	private static final ReentrantLock lock = new ReentrantLock();
 	
 	/**
 	 * 获取tomcat项目中class或者.x文件版本信息
@@ -334,7 +343,26 @@ public class VersionUtil {
 				String className = path.substring(path.indexOf("classes\\") + "classes\\".length(), path.lastIndexOf(".")).replace("\\", ".");// 切割出类名
 				// 获取项目类加载URL
 				String classPath = path.substring(0, path.indexOf("classes") + "classes".length());
-				String libPath = path.substring(0, path.indexOf("WEB-INF") + "WEB-INF".length()) + "\\lib";
+				if(libPath == null){// 初始化项目jar加载路径
+					lock.lock();// 加锁
+					try{
+						if(libPath == null){ // 再次判空
+							String tomcatProjectLibPath = path.substring(0, path.indexOf("WEB-INF") + "WEB-INF".length()) + "\\lib";
+							File tomcatProjectLibDir = new File(tomcatProjectLibPath);
+							if(tomcatProjectLibDir.exists()){
+								File tomcatProjectLibBackupDir = new File((tomcatProjectLibDir.getParentFile().getParentFile().getParentFile().getParentFile()).getPath()+"/libBak");
+								if(tomcatProjectLibBackupDir.exists()){
+									FileUtil.deleteDirOrFile(tomcatProjectLibBackupDir.getPath());
+								}
+								tomcatProjectLibBackupDir.mkdirs();
+								FileUtil.copyDirContentToDir(tomcatProjectLibDir, tomcatProjectLibBackupDir);
+								libPath = tomcatProjectLibBackupDir.getPath();
+							}
+						}
+					}finally{
+						lock.unlock();// 解锁
+					}
+				}
 				ClassPool pool = getClassPool(classPath, libPath);
 				try{
 					if(pool != null){

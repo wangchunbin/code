@@ -7,7 +7,6 @@ import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -236,32 +235,32 @@ public class FileUtil {
 	/**
 	 * 缓存
 	 */
-	private static URL[] libDirJarURLs = null;
+	private static String[] libJarPaths = null;
 
 	/**
-	 * 返回tomcat项目lib目录下jar对应的URL
+	 * 返回tomcat项目lib备份目录下jar对应的路径
 	 * 
 	 * @param libDirPath
 	 * @return
 	 * @throws MalformedURLException
 	 */
-	public static URL[] getTomcatProjectLibJarURL(String libDirPath) throws MalformedURLException {
-		if (libDirJarURLs == null || libDirJarURLs.length == 0) {
+	public static String[] getTomcatProjectLibJarPaths(String libDirPath) throws MalformedURLException {
+		if (libJarPaths == null || libJarPaths.length == 0) {
 			File libDir = new File(libDirPath);
-			URL[] urls = null;
+			String[] paths = null;
 			if (libDir != null && libDir.exists()) {
 				File[] jars = libDir.listFiles();
-				urls = new URL[jars.length];
+				paths = new String[jars.length];
 				for (int i = 0; i < jars.length; i++) {
-					urls[i] = jars[i].toURI().toURL();
+					paths[i] = jars[i].getPath();
 				}
-				libDirJarURLs = urls;
-				return urls;
+				libJarPaths = paths;
+				return paths;
 			} else {
 				return null;
 			}
 		} else {
-			return libDirJarURLs;// 直接返回缓存
+			return libJarPaths;// 直接返回缓存
 		}
 	}
 	
