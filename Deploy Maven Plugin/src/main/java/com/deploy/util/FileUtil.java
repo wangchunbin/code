@@ -187,7 +187,12 @@ public class FileUtil {
 	public static boolean deleteDirOrFile(String path) throws Exception {
 		File file = new File(path);
 		if (!file.isDirectory()) {
-			file.delete();
+			boolean result = file.delete();
+			int tryCount = 0;
+	        while (!result && tryCount++ < 10) {
+	            System.gc();// 回收资源
+	            result = file.delete();
+	        }
 		} else if (file.isDirectory()) {
 			File[] fileList = file.listFiles();
 			for (int i = 0; i < fileList.length; i++) {
