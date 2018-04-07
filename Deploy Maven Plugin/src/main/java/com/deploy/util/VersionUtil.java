@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
@@ -289,124 +290,6 @@ public class VersionUtil {
 		}
 	}
 
-    /**
-     * 线程本地变量	
-     */
-	private static final ThreadLocal<ClassPool> threadLocal = new ThreadLocal<ClassPool>();
-	
-	/**
-	 * 获取线程类池
-	 * 
-	 * @return
-	 */
-	private static ClassPool getClassPool(String classPath,String libPath){
-		ClassPool pool = (ClassPool) threadLocal.get();
-		try{
-			if(pool == null){
-				String[] libJarPaths = FileUtil.getTomcatProjectLibJarPaths(libPath);
-				pool = ClassPool.getDefault();
-				for(String path : libJarPaths){
-					pool.appendClassPath(path);
-				}
-				pool.appendClassPath(classPath);
-				pool.appendSystemPath();
-				threadLocal.set(pool);
-			}
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		return pool;
-	}
-
-	/**
-	 * 项目jar包加载路径
-	 */
-	private static String libPath = null;
-	
-	/**
-	 * 锁
-	 */
-	private static final ReentrantLock lock = new ReentrantLock();
-	
-	/**
-	 * 获取tomcat项目中class或者.x文件版本信息
-	 * 
-	 * @param file
-	 * @return
-	 */
-	public static Map<String, String> getVersionInfo(File tomcatProjectfile) throws Exception {
-		if (tomcatProjectfile != null && tomcatProjectfile.exists()
-				&& (tomcatProjectfile.getName().endsWith(".class") || tomcatProjectfile.getName().endsWith(".x"))) {// 判空
-			Map<String, String> versionInfo = new HashMap<String, String>();
-			if (tomcatProjectfile.getName().endsWith(".class")) {
-				String path = tomcatProjectfile.getPath();
-				String className = path.substring(path.indexOf("classes\\") + "classes\\".length(), path.lastIndexOf(".")).replace("\\", ".");// 切割出类名
-				// 获取项目类加载URL
-				String classPath = path.substring(0, path.indexOf("classes") + "classes".length());
-				if(libPath == null){// 初始化项目jar加载路径
-					lock.lock();// 加锁
-					try{
-						if(libPath == null){ // 再次判空
-							String tomcatProjectLibPath = path.substring(0, path.indexOf("WEB-INF") + "WEB-INF".length()) + "\\lib";
-							File tomcatProjectLibDir = new File(tomcatProjectLibPath);
-							if(tomcatProjectLibDir.exists()){
-								File tomcatProjectLibBackupDir = new File((tomcatProjectLibDir.getParentFile().getParentFile().getParentFile().getParentFile()).getPath()+"/libBak");
-								if(tomcatProjectLibBackupDir.exists()){
-									FileUtil.deleteDirOrFile(tomcatProjectLibBackupDir.getPath());
-								}
-								tomcatProjectLibBackupDir.mkdirs();
-								FileUtil.copyDirContentToDir(tomcatProjectLibDir, tomcatProjectLibBackupDir);
-								libPath = tomcatProjectLibBackupDir.getPath();
-							}
-						}
-					}finally{
-						lock.unlock();// 解锁
-					}
-				}
-				ClassPool pool = getClassPool(classPath, libPath);
-				try{
-					if(pool != null){
-						CtClass cls=pool.get(className);// 加载类
-						if (cls != null) {
-							Object obj= cls.getAnnotation(Version.class);// 获取版本Annotation
-							if (obj != null) {// 获取版本信息
-								Version version = (Version) obj;
-								versionInfo.put("versionNumber", version.versionNumber());
-								versionInfo.put("information", version.information());
-							}
-						}
-					}
-				}catch(Exception e){
-					e.printStackTrace();
-				}
-			} else if (tomcatProjectfile.getName().endsWith(".x")) {// 使用IO流获取.x文件版本信息
-				FileInputStream fis = new FileInputStream(tomcatProjectfile);
-				BufferedReader br = new BufferedReader(new InputStreamReader(fis, "GBK"));
-				String line = null;
-				int lineCount = 0;
-				while ((line = br.readLine()) != null) {
-					if (lineCount == 0) {
-						if (line.contains("#versionNumber=")) {
-							versionInfo.put("versionNumber", line.replace("#versionNumber=", "").trim());
-						}
-					} else if (lineCount == 1) {
-						if (line.contains("#information=")) {
-							versionInfo.put("information", line.replace("#information=", "").trim());
-						}
-					} else {
-						break;
-					}
-					lineCount++;
-				}
-				br.close();
-				fis.close();
-			}
-			return versionInfo;
-		} else {
-			return null;
-		}
-	}
-
 	/**
 	 * 获取tomcat项目下文件修改信息
 	 * 
@@ -541,7 +424,7 @@ public class VersionUtil {
 						fvi.setFileSize(Long.valueOf(file.length()).intValue());
 						cal.setTimeInMillis(file.lastModified());
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
-						Map<String, String> versionInfo = VersionUtil.getVersionInfo(file);
+						Map<String, String> versionInfo = VersionUtil.getVersionInfo_1(file);
 						if (versionInfo != null && versionInfo.size() > 0) {
 							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : versionInfo.get("versionNumber"));
 							fvi.setInformation(versionInfo.get("information") == null ? null : versionInfo.get("information"));
@@ -557,6 +440,137 @@ public class VersionUtil {
 		}
 	}
 	
+    /**
+     * 线程本地变量	
+     */
+	private static final ThreadLocal<ClassPool> GetFileVersionInfoThreadLocal = new ThreadLocal<ClassPool>();
+	
+	/**
+	 * 获取线程类池
+	 * 
+	 * @return
+	 */
+	private static ClassPool getClassPoolByGetFileVersionInfoThreadLocal(String classPath,String libPath){
+		ClassPool pool = (ClassPool) GetFileVersionInfoThreadLocal.get();
+		try{
+			if(pool == null){
+				pool = ClassPool.getDefault();
+				pool.appendSystemPath();
+				pool.appendClassPath(classPath);
+				File libDir = new File(libPath);
+				if (libDir != null && libDir.exists()) {
+					File[] jars = libDir.listFiles(new FilenameFilter() {
+						@Override
+						public boolean accept(File dir, String name) {
+							if(name.contains(".jar")){
+								return true;
+							}
+							return false;
+						}
+					});
+					if(jars != null && jars.length >0){
+						for (int i = 0; i < jars.length; i++) {
+							pool.appendClassPath(jars[i].getPath());
+						}
+					}
+				}
+				GetFileVersionInfoThreadLocal.set(pool);
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return pool;
+	}
+	
+	/**
+	 * 项目jar包加载路径
+	 */
+	private static String tempLibDirPath = null;
+	
+	/**
+	 * 锁
+	 */
+	private static final ReentrantLock getTempLibDirPathlock = new ReentrantLock();
+	
+	/**
+	 * 获取tomcat项目中class或者.x文件版本信息
+	 * 
+	 * @param file
+	 * @return
+	 */
+	public static Map<String, String> getVersionInfo_1(File tomcatProjectfile) throws Exception {
+		if (tomcatProjectfile != null && tomcatProjectfile.exists()
+				&& (tomcatProjectfile.getName().endsWith(".class") || tomcatProjectfile.getName().endsWith(".x"))) {// 判空
+			Map<String, String> versionInfo = new HashMap<String, String>();
+			if (tomcatProjectfile.getName().endsWith(".class")) {
+				String path = tomcatProjectfile.getPath();
+				String className = path.substring(path.indexOf("classes\\") + "classes\\".length(), path.lastIndexOf(".")).replace("\\", ".");// 切割出类名
+				// 获取项目类加载URL
+				String classPath = path.substring(0, path.indexOf("classes") + "classes".length());
+				if(tempLibDirPath == null){// 初始化项目jar加载路径
+					getTempLibDirPathlock.lock();// 加锁
+					try{
+						if(tempLibDirPath == null){ // 再次判空
+							String tomcatProjectLibPath = path.substring(0, path.indexOf("WEB-INF") + "WEB-INF".length()) + "\\lib";
+							File tomcatProjectLibDir = new File(tomcatProjectLibPath);
+							if(tomcatProjectLibDir.exists()){
+								File tomcatProjectLibBackupDir = new File((tomcatProjectLibDir.getParentFile().getParentFile().getParentFile().getParentFile()).getPath()+"/libBak");
+								if(tomcatProjectLibBackupDir.exists()){
+									FileUtil.deleteDirOrFile(tomcatProjectLibBackupDir.getPath());
+								}
+								tomcatProjectLibBackupDir.mkdirs();
+								FileUtil.copyDirContentToDir(tomcatProjectLibDir, tomcatProjectLibBackupDir);
+								tempLibDirPath = tomcatProjectLibBackupDir.getPath();
+							}
+						}
+					}finally{
+						getTempLibDirPathlock.unlock();// 解锁
+					}
+				}
+				ClassPool pool = getClassPoolByGetFileVersionInfoThreadLocal(classPath, tempLibDirPath);
+				try{
+					if(pool != null){
+						CtClass cls=pool.get(className);// 加载类
+						if (cls != null) {
+							Object obj= cls.getAnnotation(Version.class);// 获取版本Annotation
+							if (obj != null) {// 获取版本信息
+								Version version = (Version) obj;
+								versionInfo.put("versionNumber", version.versionNumber());
+								versionInfo.put("information", version.information());
+							}
+						}
+					}
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+			} else if (tomcatProjectfile.getName().endsWith(".x")) {// 使用IO流获取.x文件版本信息
+				FileInputStream fis = new FileInputStream(tomcatProjectfile);
+				BufferedReader br = new BufferedReader(new InputStreamReader(fis, "GBK"));
+				String line = null;
+				int lineCount = 0;
+				while ((line = br.readLine()) != null) {
+					if (lineCount == 0) {
+						if (line.contains("#versionNumber=")) {
+							versionInfo.put("versionNumber", line.replace("#versionNumber=", "").trim());
+						}
+					} else if (lineCount == 1) {
+						if (line.contains("#information=")) {
+							versionInfo.put("information", line.replace("#information=", "").trim());
+						}
+					} else {
+						break;
+					}
+					lineCount++;
+				}
+				br.close();
+				fis.close();
+			}
+			return versionInfo;
+		} else {
+			return null;
+		}
+	}
+	
 	/**
 	 * 保存tomcat项目增量文件版本信息
 	 * 
@@ -564,9 +578,10 @@ public class VersionUtil {
 	 * @param tomcatProjectDir
 	 * @param checkInfo
 	 * @param diffInfo
+	 * @param jarDiffInfo
 	 * @throws Exception
 	 */
-	public static void saveIncrementalTomcatFileVersionInfo(Integer deployId, File tomcatProjectDir, Map<FileVersionInfo, String> checkInfo, String projectAtGitRepositoryPath, Map<String, String> diffInfo , Map<File, String> jarDiffInfo) throws Exception {
+	public static void saveIncrementalTomcatFileVersionInfo(Integer deployId, File tomcatProjectDir, Map<FileVersionInfo, String> checkInfo, String projectAtGitRepositoryPath, Map<String, String> diffInfo, Map<File, String> jarDiffInfo) throws Exception {
 		if (checkInfo != null && checkInfo.size() > 0) {
 			for (Entry<FileVersionInfo, String> entry : checkInfo.entrySet()) {
 				FileVersionInfo newFvi = entry.getKey();
@@ -592,7 +607,7 @@ public class VersionUtil {
 						fvi.setFileSize(Long.valueOf(tomcatFile.length()).intValue());
 						cal.setTimeInMillis(tomcatFile.lastModified());
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
-						Map<String, String> versionInfo = getVersionInfo(tomcatFile);
+						Map<String, String> versionInfo = getVersionInfo_2(tomcatFile);
 						if (versionInfo != null && versionInfo.size() > 0) {
 							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : versionInfo.get("versionNumber"));
 							fvi.setInformation(versionInfo.get("information") == null ? null : versionInfo.get("information"));
@@ -632,7 +647,7 @@ public class VersionUtil {
 						fvi.setFileSize(Long.valueOf(file.length()).intValue());
 						cal.setTimeInMillis(tomcatFile.lastModified());
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
-						Map<String, String> versionInfo = getVersionInfo(tomcatFile);
+						Map<String, String> versionInfo = getVersionInfo_2(tomcatFile);
 						if (versionInfo != null && versionInfo.size() > 0) {
 							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : versionInfo.get("versionNumber"));
 							fvi.setInformation(versionInfo.get("information") == null ? null : versionInfo.get("information"));
@@ -814,7 +829,7 @@ public class VersionUtil {
 						fvi.setFileSize(Long.valueOf(file.length()).intValue());
 						cal.setTimeInMillis(file.lastModified());
 						fvi.setLastModifyTime(sdf.format(cal.getTime()));
-						Map<String, String> versionInfo = VersionUtil.getVersionInfo(file);
+						Map<String, String> versionInfo = VersionUtil.getVersionInfo_2(file);
 						if (versionInfo != null && versionInfo.size() > 0) {
 							fvi.setVersionNumber(versionInfo.get("versionNumber") == null ? null : versionInfo.get("versionNumber"));
 							fvi.setInformation(versionInfo.get("information") == null ? null : versionInfo.get("information"));
@@ -827,6 +842,108 @@ public class VersionUtil {
 			} finally {
 				countDownLatch.countDown();
 			}
+		}
+	}
+	
+    /**
+     * 线程本地变量	
+     */
+	private static final ThreadLocal<ClassPool> saveFileVersionInfoThreadLocal = new ThreadLocal<ClassPool>();
+	
+	/**
+	 * 获取线程类池
+	 * 
+	 * @return
+	 */
+	private static ClassPool getClassPoolBySaveFileVersionInfoThreadLocal(String classPath,String libPath){
+		ClassPool pool = (ClassPool) saveFileVersionInfoThreadLocal.get();
+		try{
+			if(pool == null){
+				pool = ClassPool.getDefault();
+				pool.appendSystemPath();
+				pool.appendClassPath(classPath);
+				File libDir = new File(libPath);
+				if (libDir != null && libDir.exists()) {
+					File[] jars = libDir.listFiles(new FilenameFilter() {
+						@Override
+						public boolean accept(File dir, String name) {
+							if(name.contains(".jar")){
+								return true;
+							}
+							return false;
+						}
+					});
+					if(jars != null && jars.length >0){
+						for (int i = 0; i < jars.length; i++) {
+							pool.appendClassPath(jars[i].getPath());
+						}
+					}
+				}
+				saveFileVersionInfoThreadLocal.set(pool);
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return pool;
+	}
+	
+	/**
+	 * 获取tomcat项目中class或者.x文件版本信息
+	 * 
+	 * @param file
+	 * @return
+	 */
+	public static Map<String, String> getVersionInfo_2(File tomcatProjectfile) throws Exception {
+		if (tomcatProjectfile != null && tomcatProjectfile.exists()
+				&& (tomcatProjectfile.getName().endsWith(".class") || tomcatProjectfile.getName().endsWith(".x"))) {// 判空
+			Map<String, String> versionInfo = new HashMap<String, String>();
+			if (tomcatProjectfile.getName().endsWith(".class")) {
+				String path = tomcatProjectfile.getPath();
+				String className = path.substring(path.indexOf("classes\\") + "classes\\".length(), path.lastIndexOf(".")).replace("\\", ".");// 切割出类名
+				// 获取项目类加载URL
+				String classPath = path.substring(0, path.indexOf("classes") + "classes".length());
+				String libDirPath = path.substring(0, path.indexOf("WEB-INF") + "WEB-INF".length()) + "\\lib";
+				ClassPool pool = getClassPoolBySaveFileVersionInfoThreadLocal(classPath, libDirPath);
+				try{
+					if(pool != null){
+						CtClass cls=pool.get(className);// 加载类
+						if (cls != null) {
+							Object obj= cls.getAnnotation(Version.class);// 获取版本Annotation
+							if (obj != null) {// 获取版本信息
+								Version version = (Version) obj;
+								versionInfo.put("versionNumber", version.versionNumber());
+								versionInfo.put("information", version.information());
+							}
+						}
+					}
+				}catch(Exception e){
+					e.printStackTrace();
+				}
+			} else if (tomcatProjectfile.getName().endsWith(".x")) {// 使用IO流获取.x文件版本信息
+				FileInputStream fis = new FileInputStream(tomcatProjectfile);
+				BufferedReader br = new BufferedReader(new InputStreamReader(fis, "GBK"));
+				String line = null;
+				int lineCount = 0;
+				while ((line = br.readLine()) != null) {
+					if (lineCount == 0) {
+						if (line.contains("#versionNumber=")) {
+							versionInfo.put("versionNumber", line.replace("#versionNumber=", "").trim());
+						}
+					} else if (lineCount == 1) {
+						if (line.contains("#information=")) {
+							versionInfo.put("information", line.replace("#information=", "").trim());
+						}
+					} else {
+						break;
+					}
+					lineCount++;
+				}
+				br.close();
+				fis.close();
+			}
+			return versionInfo;
+		} else {
+			return null;
 		}
 	}
 }
