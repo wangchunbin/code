@@ -65,6 +65,7 @@ public class FileUtil {
 			out.write(data, 0, size);
 		}
 		in.close();
+		out.flush();
 		out.close();
 	}
 
