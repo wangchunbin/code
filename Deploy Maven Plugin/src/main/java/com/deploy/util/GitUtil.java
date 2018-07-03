@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import org.eclipse.jgit.api.CheckoutCommand;
 import org.eclipse.jgit.api.CloneCommand;
 import org.eclipse.jgit.api.Git;
@@ -18,11 +19,13 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
+import org.eclipse.jgit.treewalk.TreeWalk;
 
 /**
  * Git操作工具类
  * 
  * @author WangChunBin
+ * @see https://github.com/centic9/jgit-cookbook
  *
  */
 public class GitUtil {
@@ -246,5 +249,29 @@ public class GitUtil {
 		}
 		git.close();
 		return gitCommitFileVersionInfo;
+	}
+	
+	/**
+	 * 测试
+	 * @param args
+	 * @throws Exception
+	 */
+	public static void main(String[] args) throws Exception {
+		Repository repository = getLocalRepository("C:\\Work\\IdeaProjects\\idea\\springbootdemo");
+		Git git = new Git(repository);
+		Iterable<RevCommit> iterable = git.log().call();
+		Iterator<RevCommit> iterator = iterable.iterator();
+		while (iterator.hasNext()) {
+			RevCommit rc = iterator.next();
+			if(rc.getId().getName().equals("2f83baa2190e2ba89199caca049d2c6c80b04f3f")){
+				TreeWalk treeWalk = new TreeWalk(repository); 
+	            treeWalk.addTree(rc.getTree());
+	            treeWalk.setRecursive(true);
+	            treeWalk.setPostOrderTraversal(false);
+	            while(treeWalk.next()) {
+	                System.out.println(treeWalk.getPathString());
+	            }
+			}
+        }
 	}
 }
